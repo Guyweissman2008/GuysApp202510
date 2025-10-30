@@ -8,6 +8,7 @@ public class FBRef {
 
     public static FirebaseAuth mAuth = FirebaseAuth.getInstance();
     public static FirebaseFirestore FBFS = FirebaseFirestore.getInstance();
+    public static CollectionReference recipesRef = FBFS.collection("Recipes");
     public static CollectionReference refImages = FBFS.collection("Images");
     public static CollectionReference refUsers = FBFS.collection("Users");
 }

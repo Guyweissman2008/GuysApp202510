@@ -3,37 +3,59 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center">
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="#FFF4F8"> <!-- רקע ורוד בהיר מאוד -->
 
-    <!-- כאן יש את שדות הטופס של ההתחברות -->
+    <!-- שדה אימייל -->
     <EditText
         android:id="@+id/edittext_email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Email"
-        android:inputType="textEmailAddress" />
+        android:inputType="textEmailAddress"
+        android:background="#FFFFFFFF"
+        android:backgroundTint="#FFD6E0"
+        android:textColor="#FF6F91"
+        android:textColorHint="#FFB6C1"
+        android:padding="10dp"
+        android:layout_marginBottom="12dp" />
 
+    <!-- שדה סיסמה -->
     <EditText
         android:id="@+id/edittext_password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Password"
-        android:inputType="textPassword" />
+        android:inputType="textPassword"
+        android:background="#FFFFFFFF"
+        android:backgroundTint="#FFD6E0"
+        android:textColor="#FF6F91"
+        android:textColorHint="#FFB6C1"
+        android:padding="10dp"
+        android:layout_marginBottom="20dp" />
 
     <!-- כפתור התחברות -->
     <Button
         android:id="@+id/button_login"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login" />
+        android:text="Login"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#FFAEC9"
+        android:paddingVertical="12dp"
+        android:elevation="3dp"
+        android:layout_marginBottom="16dp" />
 
     <!-- כפתור הרשמה -->
     <Button
         android:id="@+id/button_register"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Don't have an account? Register here"
-        android:layout_marginTop="16dp" />
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#FFB6C1"
+        android:paddingVertical="12dp"
+        android:elevation="2dp" />
 
 </LinearLayout>
