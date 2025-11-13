@@ -32,18 +32,24 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
         Recipe recipe = recipeList.get(position);
+
         holder.title.setText(recipe.getTitle());
         holder.description.setText(recipe.getDescription());
 
         if (recipe.getImageData() != null) {
-            byte[] bytes = new byte[recipe.getImageData().size()];
-            for (int i = 0; i < bytes.length; i++) {
-                bytes[i] = recipe.getImageData().get(i).byteValue();
+            try {
+                byte[] bytes = new byte[recipe.getImageData().size()];
+                for (int i = 0; i < bytes.length; i++) {
+                    bytes[i] = recipe.getImageData().get(i).byteValue();
+                }
+                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                holder.image.setImageBitmap(bitmap);
+            } catch (Exception e) {
+                e.printStackTrace();
+                holder.image.setImageResource(R.mipmap.ic_launcher_round); // Placeholder במקרה של תקלה
             }
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            holder.image.setImageBitmap(bitmap);
         } else {
-            holder.image.setImageResource(R.mipmap.ic_launcher_round); // Placeholder
+            holder.image.setImageResource(R.mipmap.ic_launcher_round); // Placeholder למתכונים ישנים בלי תמונה
         }
     }
 

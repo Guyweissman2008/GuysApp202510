@@ -36,17 +36,14 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Initialize views
         profileImage = findViewById(R.id.profile_image);
         textEmail = findViewById(R.id.text_email);
         recyclerViewRecipes = findViewById(R.id.recyclerView_user_recipes);
 
-        // Setup RecyclerView
         recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(userRecipes);
         recyclerViewRecipes.setAdapter(adapter);
 
-        // Firebase setup
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
@@ -58,10 +55,8 @@ public class ProfileActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        // תמיד להציג את האימייל של המשתמש המחובר
         textEmail.setText(currentUser.getEmail());
 
-        // אם רוצים גם את התמונה, נקבל את המסמך של המשתמש מ-Firestore
         String userId = currentUser.getUid();
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -86,14 +81,16 @@ public class ProfileActivity extends AppCompatActivity {
 
         String userId = currentUser.getUid();
 
-        db.collection("recipes")
+        db.collection("Recipes")
                 .whereEqualTo("userId", userId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     userRecipes.clear();
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
                         Recipe recipe = doc.toObject(Recipe.class);
-                        if (recipe != null) userRecipes.add(recipe);
+                        if (recipe != null) {
+                            userRecipes.add(recipe);
+                        }
                     }
                     adapter.notifyDataSetChanged();
                 })
