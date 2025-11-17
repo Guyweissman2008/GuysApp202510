@@ -7,9 +7,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -32,13 +35,15 @@ public class AddRecipeActivity extends AppCompatActivity {
     private EditText editTitle, editDescription;
     private ImageView imageRecipe;
     private Button buttonAdd;
+    private Spinner spinnerCategory;
 
-    private Bitmap selectedBitmap = null; // שמירת התמונה שנבחרה
+    private Bitmap selectedBitmap = null;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
-    // ActivityResultLauncher לבחירת תמונה
+    private String selectedCategory = "";
+
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     result -> {
@@ -50,7 +55,9 @@ public class AddRecipeActivity extends AppCompatActivity {
                                             ImageDecoder.createSource(getContentResolver(), imageUri)
                                     );
                                 } else {
-                                    selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                                    selectedBitmap = MediaStore.Images.Media.getBitmap(
+                                            getContentResolver(), imageUri
+                                    );
                                 }
                                 imageRecipe.setImageBitmap(selectedBitmap);
                             } catch (IOException e) {
@@ -69,11 +76,32 @@ public class AddRecipeActivity extends AppCompatActivity {
         editDescription = findViewById(R.id.edit_recipe_description);
         imageRecipe = findViewById(R.id.image_recipe);
         buttonAdd = findViewById(R.id.button_add_recipe);
+        spinnerCategory = findViewById(R.id.spinner_category);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // לחיצה על התמונה → בחירת תמונה מהגלריה
+        // טוען קטגוריות ל-Spinner
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.recipe_categories,
+                android.R.layout.simple_spinner_item
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategory.setAdapter(adapter);
+
+        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+                selectedCategory = parent.getItemAtPosition(position).toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedCategory = "";
+            }
+        });
+
         imageRecipe.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             pickImageLauncher.launch(intent);
@@ -86,7 +114,7 @@ public class AddRecipeActivity extends AppCompatActivity {
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();
 
-        if (title.isEmpty() || description.isEmpty()) {
+        if (title.isEmpty() || description.isEmpty() || selectedCategory.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -96,7 +124,6 @@ public class AddRecipeActivity extends AppCompatActivity {
             return;
         }
 
-        // המרת תמונה ל-byte list
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] bytes = baos.toByteArray();
@@ -111,12 +138,13 @@ public class AddRecipeActivity extends AppCompatActivity {
         recipe.put("description", description);
         recipe.put("imageData", imageDataList);
         recipe.put("userId", userId);
+        recipe.put("category", selectedCategory);
 
         db.collection("Recipes")
                 .add(recipe)
                 .addOnSuccessListener(doc -> {
                     Toast.makeText(this, "Recipe added!", Toast.LENGTH_SHORT).show();
-                    finish(); // חזרה לפרופיל
+                    finish();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to add recipe", Toast.LENGTH_SHORT).show());
     }

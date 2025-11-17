@@ -23,6 +23,12 @@
             android:hint="Recipe Description"
             android:layout_marginTop="8dp"/>
 
+        <Spinner
+            android:id="@+id/spinner_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"/>
+
         <ImageView
             android:id="@+id/image_recipe"
             android:layout_width="match_parent"

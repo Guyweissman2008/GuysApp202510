@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Guys App</string>
+    <string-array name="recipe_categories">
+        <item>main dish</item>
+        <item>dessert</item>
+        <item>salads</item>
+        <item>soups</item>
+        <item>starters</item>
+    </string-array>
+
 </resources>

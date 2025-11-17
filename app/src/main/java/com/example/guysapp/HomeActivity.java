@@ -4,7 +4,10 @@ import static com.example.guysapp.FBRef.recipesRef;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,44 +28,37 @@ public class HomeActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecipeAdapter adapter;
     private List<Recipe> recipeList = new ArrayList<>();
+    private List<Recipe> filteredList = new ArrayList<>();
+    private EditText searchEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // קישור בין רכיבי UI
         buttonLogout = findViewById(R.id.button_logout);
         addRecipeButton = findViewById(R.id.button_add_recipe);
         recyclerView = findViewById(R.id.recyclerView_recipes);
+        searchEditText = findViewById(R.id.editText_search);
 
-        // הגדרת RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RecipeAdapter(recipeList);
+        adapter = new RecipeAdapter(filteredList);
         recyclerView.setAdapter(adapter);
 
-        // טעינת מתכונים בזמן אמת
         loadRecipesRealtime();
 
-        // כפתור יציאה
         buttonLogout.setOnClickListener(v -> logoutUser());
-
-        // כפתור הוספת מתכון (הכפתור הצף)
         addRecipeButton.setOnClickListener(v ->
                 startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class)));
 
-        // 🔽 תפריט תחתון (Bottom Navigation)
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_home); // ברירת מחדל: מסך הבית
-
+        bottomNav.setSelectedItemId(R.id.nav_home);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                // כבר במסך הבית
-                return true;
-            } else if (id == R.id.nav_add) {
+            if (id == R.id.nav_home) return true;
+            else if (id == R.id.nav_add) {
                 startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class));
-                overridePendingTransition(0, 0); // מעבר חלק
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_profile) {
                 startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
@@ -71,9 +67,20 @@ public class HomeActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        // חיפוש בזמן אמת
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterRecipes(s.toString());
+            }
+            @Override
+            public void afterTextChanged(Editable s) { }
+        });
     }
 
-    // טעינת מתכונים בזמן אמת
     private void loadRecipesRealtime() {
         recipesRef.addSnapshotListener((queryDocumentSnapshots, e) -> {
             if (e != null) {
@@ -88,11 +95,27 @@ public class HomeActivity extends AppCompatActivity {
                     recipeList.add(recipe);
                 }
             }
-            adapter.notifyDataSetChanged();
+            filterRecipes(searchEditText.getText().toString());
         });
     }
 
-    // יציאת משתמש
+    private void filterRecipes(String query) {
+        filteredList.clear();
+        if (query.isEmpty()) {
+            filteredList.addAll(recipeList);
+        } else {
+            String lowerQuery = query.toLowerCase();
+            for (Recipe r : recipeList) {
+                String title = r.getTitle() != null ? r.getTitle().toLowerCase() : "";
+                String category = r.getCategory() != null ? r.getCategory().toLowerCase() : "";
+                if (title.contains(lowerQuery) || category.contains(lowerQuery)) {
+                    filteredList.add(r);
+                }
+            }
+        }
+        adapter.notifyDataSetChanged();
+    }
+
     private void logoutUser() {
         FBRef.mAuth.signOut();
         Toast.makeText(HomeActivity.this, "You have been logged out", Toast.LENGTH_SHORT).show();

@@ -35,6 +35,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
         holder.title.setText(recipe.getTitle());
         holder.description.setText(recipe.getDescription());
+        holder.category.setText("קטגוריה: " + recipe.getCategory());
 
         if (recipe.getImageData() != null) {
             try {
@@ -62,12 +63,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         ImageView image;
         TextView title;
         TextView description;
+        TextView category;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image_recipe);
             title = itemView.findViewById(R.id.text_recipe_title);
             description = itemView.findViewById(R.id.text_recipe_description);
+            category = itemView.findViewById(R.id.text_recipe_category);
         }
     }
 }
