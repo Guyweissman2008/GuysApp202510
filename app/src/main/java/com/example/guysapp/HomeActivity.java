@@ -6,24 +6,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends BaseActivity {
 
-    private Button buttonLogout;
     private FloatingActionButton addRecipeButton;
     private RecyclerView recyclerView;
     private RecipeAdapter adapter;
@@ -36,7 +32,9 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        buttonLogout = findViewById(R.id.button_logout);
+        // קביעת BottomNavigationView דרך BaseActivity
+        setupBottomNavigation(R.id.nav_home);
+
         addRecipeButton = findViewById(R.id.button_add_recipe);
         recyclerView = findViewById(R.id.recyclerView_recipes);
         searchEditText = findViewById(R.id.editText_search);
@@ -47,37 +45,17 @@ public class HomeActivity extends AppCompatActivity {
 
         loadRecipesRealtime();
 
-        buttonLogout.setOnClickListener(v -> logoutUser());
+        // כפתור הוספת מתכון
         addRecipeButton.setOnClickListener(v ->
                 startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class)));
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_home);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) return true;
-            else if (id == R.id.nav_add) {
-                startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.nav_profile) {
-                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
-        });
-
         // חיפוש בזמן אמת
         searchEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filterRecipes(s.toString());
             }
-            @Override
-            public void afterTextChanged(Editable s) { }
+            @Override public void afterTextChanged(Editable s) { }
         });
     }
 
@@ -114,12 +92,5 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
         adapter.notifyDataSetChanged();
-    }
-
-    private void logoutUser() {
-        FBRef.mAuth.signOut();
-        Toast.makeText(HomeActivity.this, "You have been logged out", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(HomeActivity.this, LoginActivity.class));
-        finish();
     }
 }

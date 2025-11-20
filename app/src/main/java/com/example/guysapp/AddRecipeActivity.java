@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,8 +16,6 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AddRecipeActivity extends AppCompatActivity {
+public class AddRecipeActivity extends BaseActivity {
 
     private EditText editTitle, editDescription;
     private ImageView imageRecipe;
@@ -68,9 +65,12 @@ public class AddRecipeActivity extends AppCompatActivity {
                     });
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
+
+        // קביעת BottomNavigationView דרך BaseActivity
+        setupBottomNavigation(R.id.nav_add);
 
         editTitle = findViewById(R.id.edit_recipe_title);
         editDescription = findViewById(R.id.edit_recipe_description);
@@ -90,14 +90,14 @@ public class AddRecipeActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(adapter);
 
-        spinnerCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinnerCategory.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
                 selectedCategory = parent.getItemAtPosition(position).toString();
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
                 selectedCategory = "";
             }
         });

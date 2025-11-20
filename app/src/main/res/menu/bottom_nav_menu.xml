@@ -14,5 +14,9 @@
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_person"
         android:title="פרופיל" />
+    <item
+        android:id="@+id/nav_logout"
+        android:icon="@android:drawable/btn_dialog"
+        android:title="התנתק" />
 
 </menu>
