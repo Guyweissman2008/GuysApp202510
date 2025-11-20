@@ -29,19 +29,19 @@ public class BaseActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home && selectedItemId != R.id.nav_home) {
-                startActivity(new Intent(this, HomeActivity.class));
+                startActivity(new Intent(BaseActivity.this, HomeActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
 
             } else if (id == R.id.nav_add && selectedItemId != R.id.nav_add) {
-                startActivity(new Intent(this, AddRecipeActivity.class));
+                startActivity(new Intent(BaseActivity.this, AddRecipeActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
 
             } else if (id == R.id.nav_profile && selectedItemId != R.id.nav_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
+                startActivity(new Intent(BaseActivity.this, ProfileActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
