@@ -1,5 +1,7 @@
 package com.example.guysapp;
 
+import android.Manifest;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.ImageDecoder;
@@ -16,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -31,36 +34,44 @@ public class AddRecipeActivity extends BaseActivity {
 
     private EditText editTitle, editDescription;
     private ImageView imageRecipe;
-    private Button buttonAdd;
+    private Button buttonAdd, buttonCamera;
     private Spinner spinnerCategory;
 
     private Bitmap selectedBitmap = null;
+    private Uri selectedImageUri = null;
+    private Uri cameraImageUri = null;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
     private String selectedCategory = "";
 
+    // Launcher לבחירת תמונה מהגלריה
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     result -> {
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                             Uri imageUri = result.getData().getData();
-                            try {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    selectedBitmap = ImageDecoder.decodeBitmap(
-                                            ImageDecoder.createSource(getContentResolver(), imageUri)
-                                    );
-                                } else {
-                                    selectedBitmap = MediaStore.Images.Media.getBitmap(
-                                            getContentResolver(), imageUri
-                                    );
-                                }
-                                imageRecipe.setImageBitmap(selectedBitmap);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
-                            }
+                            handleImage(imageUri);
+                        }
+                    });
+
+    // Launcher לבקשת הרשאת מצלמה
+    private final ActivityResultLauncher<String> requestCameraPermissionLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    isGranted -> {
+                        if (isGranted) openCamera();
+                        else Toast.makeText(this, "הרשאת מצלמה דרושה כדי לצלם תמונה", Toast.LENGTH_SHORT).show();
+                    });
+
+    // Launcher לצילום תמונה מהמצלמה
+    private final ActivityResultLauncher<Uri> cameraLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.TakePicture(),
+                    result -> {
+                        if (result) {
+                            handleImage(cameraImageUri);
                         }
                     });
 
@@ -69,19 +80,18 @@ public class AddRecipeActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
 
-        // קביעת BottomNavigationView דרך BaseActivity
         setupBottomNavigation(R.id.nav_add);
 
         editTitle = findViewById(R.id.edit_recipe_title);
         editDescription = findViewById(R.id.edit_recipe_description);
         imageRecipe = findViewById(R.id.image_recipe);
         buttonAdd = findViewById(R.id.button_add_recipe);
+        buttonCamera = findViewById(R.id.button_camera);
         spinnerCategory = findViewById(R.id.spinner_category);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // טוען קטגוריות ל-Spinner
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.recipe_categories,
@@ -107,9 +117,62 @@ public class AddRecipeActivity extends BaseActivity {
             pickImageLauncher.launch(intent);
         });
 
+        buttonCamera.setOnClickListener(v -> takePhoto());
+
         buttonAdd.setOnClickListener(v -> addRecipe());
     }
 
+    // פונקציה לבדיקה ובקשת הרשאת מצלמה
+    private void takePhoto() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
+                        android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        } else {
+            openCamera();
+        }
+    }
+
+    // פתיחת מצלמה ויצירת URI זמני
+    private void openCamera() {
+        cameraImageUri = createImageUri();
+        if (cameraImageUri != null) {
+            cameraLauncher.launch(cameraImageUri);
+        } else {
+            Toast.makeText(this, "שגיאה ביצירת קובץ תמונה", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // יצירת URI זמני עבור התמונה שתצולם
+    private Uri createImageUri() {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, "New Picture");
+        values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
+        return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+    }
+
+    // טעינת תמונה ל-ImageView ו-Bitmap
+    private void handleImage(Uri imageUri) {
+        if (imageUri == null) {
+            Toast.makeText(this, "Image URI is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                selectedBitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), imageUri));
+            } else {
+                selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            }
+            imageRecipe.setImageBitmap(selectedBitmap);
+            selectedImageUri = imageUri;
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // הוספת המתכון ל-Firestore
     private void addRecipe() {
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();

@@ -24,7 +24,7 @@
             android:layout_gravity="center"
             android:clipToOutline="true" />
 
-        <!-- כפתור לבחירת תמונה -->
+        <!-- כפתור לבחירת תמונה מהגלריה -->
         <Button
             android:id="@+id/button_choose_image"
             android:layout_width="wrap_content"
@@ -32,6 +32,19 @@
             android:text="Choose Image"
             android:textColor="#FFFFFF"
             android:backgroundTint="#FFB6C1"
+            android:layout_marginBottom="8dp"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="10dp"
+            android:elevation="2dp" />
+
+        <!-- כפתור לצילום תמונה מהמצלמה -->
+        <Button
+            android:id="@+id/button_take_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Take Photo"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FF8FAB"
             android:layout_marginBottom="16dp"
             android:paddingHorizontal="24dp"
             android:paddingVertical="10dp"

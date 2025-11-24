@@ -57,10 +57,10 @@ public class ProfileActivity extends BaseActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        textEmail.setText(currentUser.getEmail());
+
 
         String userId = currentUser.getUid();
-        db.collection("users").document(userId).get()
+        db.collection("Users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         List<Long> imageData = (List<Long>) documentSnapshot.get("imageData");
@@ -72,6 +72,8 @@ public class ProfileActivity extends BaseActivity {
                             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                             profileImage.setImageBitmap(bitmap);
                         }
+                        textEmail.setText((String)documentSnapshot.get("firstName")+" " +
+                                (String)documentSnapshot.get("lastName"));
                     }
                 })
                 .addOnFailureListener(e -> Toast.makeText(ProfileActivity.this, "Failed to load profile image", Toast.LENGTH_SHORT).show());

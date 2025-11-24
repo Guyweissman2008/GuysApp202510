@@ -1,56 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:layout_height="match_parent">
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="match_parent">
 
-        <EditText
-            android:id="@+id/edit_recipe_title"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Recipe Title"/>
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <EditText
-            android:id="@+id/edit_recipe_description"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Recipe Description"
-            android:layout_marginTop="8dp"/>
+            <EditText
+                android:id="@+id/edit_recipe_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Recipe Title"/>
 
-        <Spinner
-            android:id="@+id/spinner_category"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"/>
+            <EditText
+                android:id="@+id/edit_recipe_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Recipe Description"
+                android:layout_marginTop="8dp"/>
 
-        <ImageView
-            android:id="@+id/image_recipe"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginTop="16dp"
-            android:background="#DDD"
-            android:contentDescription="Recipe Image"
-            android:scaleType="centerCrop"
-            android:src="@mipmap/ic_launcher_round"/>
+            <Spinner
+                android:id="@+id/spinner_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"/>
 
-        <Button
-            android:id="@+id/button_add_recipe"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Add Recipe"
-            android:layout_marginTop="16dp"/>
+            <ImageView
+                android:id="@+id/image_recipe"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="16dp"
+                android:background="#DDD"
+                android:contentDescription="Recipe Image"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher_round"/>
 
-    </LinearLayout>
+            <Button
+                android:id="@+id/button_camera"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Open Camera"
+                android:layout_marginTop="12dp"/>
+
+            <Button
+                android:id="@+id/button_add_recipe"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add Recipe"
+                android:layout_marginTop="16dp"/>
+        </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
