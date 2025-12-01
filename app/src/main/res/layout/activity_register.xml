@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF4F8"> <!-- רקע ורוד בהיר מאוד -->
+    android:background="#FFF4F8">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -50,7 +50,7 @@
             android:paddingVertical="10dp"
             android:elevation="2dp" />
 
-        <!-- שדות טקסט -->
+        <!-- First Name -->
         <EditText
             android:id="@+id/edittext_first_name"
             android:layout_width="match_parent"
@@ -63,6 +63,7 @@
             android:padding="10dp"
             android:background="#FFFFFFFF" />
 
+        <!-- Last Name -->
         <EditText
             android:id="@+id/edittext_last_name"
             android:layout_width="match_parent"
@@ -75,6 +76,7 @@
             android:padding="10dp"
             android:background="#FFFFFFFF" />
 
+        <!-- Email -->
         <EditText
             android:id="@+id/edittext_email"
             android:layout_width="match_parent"
@@ -88,6 +90,7 @@
             android:padding="10dp"
             android:background="#FFFFFFFF" />
 
+        <!-- Password -->
         <EditText
             android:id="@+id/edittext_password"
             android:layout_width="match_parent"
@@ -101,7 +104,21 @@
             android:padding="10dp"
             android:background="#FFFFFFFF" />
 
-        <!-- תיבת סימון -->
+        <!-- Confirm Password (נוסף חדש) -->
+        <EditText
+            android:id="@+id/edittext_confirm_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Confirm Password"
+            android:inputType="textPassword"
+            android:backgroundTint="#FFD6E0"
+            android:textColor="#FF6F91"
+            android:textColorHint="#FFB6C1"
+            android:layout_marginBottom="8dp"
+            android:padding="10dp"
+            android:background="#FFFFFFFF" />
+
+        <!-- Notifications -->
         <CheckBox
             android:id="@+id/checkbox_notifications"
             android:layout_width="wrap_content"
@@ -111,7 +128,7 @@
             android:buttonTint="#FFB6C1"
             android:layout_marginBottom="20dp" />
 
-        <!-- כפתור הרשמה -->
+        <!-- Register Button -->
         <Button
             android:id="@+id/button_register"
             android:layout_width="match_parent"

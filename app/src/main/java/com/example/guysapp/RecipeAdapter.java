@@ -7,18 +7,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     private List<Recipe> recipeList;
+    private List<String> recipeIds; // רשימת documentId של המתכונים
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
-    public RecipeAdapter(List<Recipe> recipeList) {
+    public RecipeAdapter(List<Recipe> recipeList, List<String> recipeIds) {
         this.recipeList = recipeList;
+        this.recipeIds = recipeIds;
     }
 
     @NonNull
@@ -32,11 +41,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
         Recipe recipe = recipeList.get(position);
+        String recipeDocId = recipeIds.get(position);
 
         holder.title.setText(recipe.getTitle());
         holder.description.setText(recipe.getDescription());
         holder.category.setText("קטגוריה: " + recipe.getCategory());
 
+        // טעינת תמונה
         if (recipe.getImageData() != null) {
             try {
                 byte[] bytes = new byte[recipe.getImageData().size()];
@@ -47,10 +58,41 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 holder.image.setImageBitmap(bitmap);
             } catch (Exception e) {
                 e.printStackTrace();
-                holder.image.setImageResource(R.mipmap.ic_launcher_round); // Placeholder במקרה של תקלה
+                holder.image.setImageResource(R.mipmap.ic_launcher_round);
             }
         } else {
-            holder.image.setImageResource(R.mipmap.ic_launcher_round); // Placeholder למתכונים ישנים בלי תמונה
+            holder.image.setImageResource(R.mipmap.ic_launcher_round);
+        }
+
+        // כפתור שמירה
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            String docId = currentUser.getUid() + "_" + recipeDocId;
+
+            db.collection("SavedRecipes").document(docId).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            holder.saveButton.setImageResource(R.drawable.ic_favorite_filled);
+                        } else {
+                            holder.saveButton.setImageResource(R.drawable.ic_favorite_border);
+                        }
+                    });
+
+            holder.saveButton.setOnClickListener(v -> {
+                db.collection("SavedRecipes").document(docId).get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                db.collection("SavedRecipes").document(docId).delete();
+                                holder.saveButton.setImageResource(R.drawable.ic_favorite_border);
+                                Toast.makeText(v.getContext(), "הסרת מתכון מהשמורים", Toast.LENGTH_SHORT).show();
+                            } else {
+                                db.collection("SavedRecipes").document(docId)
+                                        .set(new SavedRecipe(currentUser.getUid(), recipeDocId));
+                                holder.saveButton.setImageResource(R.drawable.ic_favorite_filled);
+                                Toast.makeText(v.getContext(), "מתכון נשמר", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            });
         }
     }
 
@@ -59,8 +101,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         return recipeList.size();
     }
 
+    // מתודה לעדכון רשימות
+    public void updateList(List<Recipe> newRecipes, List<String> newIds) {
+        this.recipeList = newRecipes;
+        this.recipeIds = newIds;
+        notifyDataSetChanged();
+    }
+
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
         ImageView image;
+        ImageView saveButton;
         TextView title;
         TextView description;
         TextView category;
@@ -68,6 +118,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image_recipe);
+            saveButton = itemView.findViewById(R.id.image_save_recipe);
             title = itemView.findViewById(R.id.text_recipe_title);
             description = itemView.findViewById(R.id.text_recipe_description);
             category = itemView.findViewById(R.id.text_recipe_category);

@@ -35,7 +35,7 @@ public class RegisterActivity extends AppCompatActivity {
     private ImageView imageViewProfile;
     private Bitmap selectedBitmap;
 
-    private EditText firstNameEditText, lastNameEditText, emailEditText, passwordEditText;
+    private EditText firstNameEditText, lastNameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
     private CheckBox notificationsCheckBox;
     private Button chooseImageButton, takePhotoButton, registerButton;
 
@@ -77,6 +77,7 @@ public class RegisterActivity extends AppCompatActivity {
         lastNameEditText = findViewById(R.id.edittext_last_name);
         emailEditText = findViewById(R.id.edittext_email);
         passwordEditText = findViewById(R.id.edittext_password);
+        confirmPasswordEditText = findViewById(R.id.edittext_confirm_password);
         notificationsCheckBox = findViewById(R.id.checkbox_notifications);
         chooseImageButton = findViewById(R.id.button_choose_image);
         takePhotoButton = findViewById(R.id.button_take_photo);
@@ -88,7 +89,6 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void initCameraLaunchers() {
-        // בקשת הרשאת מצלמה
         requestCameraPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestPermission(),
                 isGranted -> {
@@ -97,7 +97,6 @@ public class RegisterActivity extends AppCompatActivity {
                 }
         );
 
-        // צילום תמונה
         cameraLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicture(),
                 result -> {
@@ -149,10 +148,19 @@ public class RegisterActivity extends AppCompatActivity {
         String lastName = lastNameEditText.getText().toString();
         String email = emailEditText.getText().toString();
         String password = passwordEditText.getText().toString();
+        String confirmPassword = confirmPasswordEditText.getText().toString();
         boolean allowNotifications = notificationsCheckBox.isChecked();
 
-        if (email.isEmpty() || password.isEmpty() || firstName.isEmpty() || lastName.isEmpty()) {
+        // בדיקה שכל השדות מלאים
+        if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()
+                || firstName.isEmpty() || lastName.isEmpty()) {
             Toast.makeText(this, "All fields must be filled", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // בדיקת התאמת סיסמאות
+        if (!password.equals(confirmPassword)) {
+            Toast.makeText(this, "הסיסמאות אינן תואמות", Toast.LENGTH_SHORT).show();
             return;
         }
 

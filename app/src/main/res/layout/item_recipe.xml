@@ -8,11 +8,10 @@
     card_view:cardCornerRadius="8dp"
     card_view:cardElevation="4dp">
 
-    <LinearLayout
+    <!-- השתמשנו ב-RelativeLayout כדי למקם את כפתור הלב מעל התמונה -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp">
+        android:layout_height="wrap_content">
 
         <ImageView
             android:id="@+id/image_recipe"
@@ -21,41 +20,61 @@
             android:scaleType="centerCrop"
             android:src="@mipmap/ic_launcher_round"/>
 
-        <!-- שם המשתמש -->
-        <TextView
-            android:id="@+id/text_recipe_user"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Uploaded by: User"
-            android:textStyle="italic"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
-            android:textColor="#555"/>
+        <!-- כפתור שמירה -->
+        <ImageView
+            android:id="@+id/image_save_recipe"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="8dp"
+            android:layout_alignTop="@id/image_recipe"
+            android:src="@drawable/ic_favorite_border"
+            android:contentDescription="שמור מתכון"/>
 
-        <TextView
-            android:id="@+id/text_recipe_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_below="@id/image_recipe"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Recipe Title"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:layout_marginTop="4dp"/>
+            android:orientation="vertical"
+            android:padding="8dp">
 
-        <TextView
-            android:id="@+id/text_recipe_description"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Recipe description goes here"
-            android:layout_marginTop="4dp"/>
+            <!-- שם המשתמש -->
+            <TextView
+                android:id="@+id/text_recipe_user"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Uploaded by: User"
+                android:textStyle="italic"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:textColor="#555"/>
 
-        <TextView
-            android:id="@+id/text_recipe_category"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="קטגוריה: ---"
-            android:textSize="14sp"
-            android:textStyle="italic"
-            android:layout_marginTop="6dp"
-            android:textColor="#555"/>
-    </LinearLayout>
+            <TextView
+                android:id="@+id/text_recipe_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recipe Title"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/text_recipe_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recipe description goes here"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/text_recipe_category"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="קטגוריה: ---"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                android:layout_marginTop="6dp"
+                android:textColor="#555"/>
+        </LinearLayout>
+
+    </RelativeLayout>
 </androidx.cardview.widget.CardView>
