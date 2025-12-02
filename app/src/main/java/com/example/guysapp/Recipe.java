@@ -7,16 +7,18 @@ public class Recipe {
     private String description;
     private List<Integer> imageData; // תמונה כ-List<Integer>
     private String category;
+    private String username; // שם המשתמש
 
     public Recipe() {
         // דרוש ל-Firestore
     }
 
-    public Recipe(String title, String description, List<Integer> imageData) {
+    public Recipe(String title, String description, List<Integer> imageData, String category, String username) {
         this.title = title;
         this.description = description;
         this.imageData = imageData;
         this.category = category;
+        this.username = username;
     }
 
     public String getTitle() { return title; }
@@ -27,7 +29,10 @@ public class Recipe {
 
     public List<Integer> getImageData() { return imageData; }
     public void setImageData(List<Integer> imageData) { this.imageData = imageData; }
+
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

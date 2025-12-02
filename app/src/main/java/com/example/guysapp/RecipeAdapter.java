@@ -21,7 +21,7 @@ import java.util.List;
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     private List<Recipe> recipeList;
-    private List<String> recipeIds; // רשימת documentId של המתכונים
+    private List<String> recipeIds;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
@@ -46,6 +46,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.title.setText(recipe.getTitle());
         holder.description.setText(recipe.getDescription());
         holder.category.setText("קטגוריה: " + recipe.getCategory());
+
+        // הצגת שם המשתמש
+        if (recipe.getUsername() != null) {
+            holder.username.setText("הועלה על ידי: @" + recipe.getUsername());
+        } else {
+            holder.username.setText("הועלה על ידי: משתמש אנונימי");
+        }
 
         // טעינת תמונה
         if (recipe.getImageData() != null) {
@@ -101,7 +108,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         return recipeList.size();
     }
 
-    // מתודה לעדכון רשימות
     public void updateList(List<Recipe> newRecipes, List<String> newIds) {
         this.recipeList = newRecipes;
         this.recipeIds = newIds;
@@ -114,6 +120,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         TextView title;
         TextView description;
         TextView category;
+        TextView username;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -122,6 +129,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             title = itemView.findViewById(R.id.text_recipe_title);
             description = itemView.findViewById(R.id.text_recipe_description);
             category = itemView.findViewById(R.id.text_recipe_category);
+            username = itemView.findViewById(R.id.text_recipe_username);
         }
     }
 }

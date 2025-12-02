@@ -70,8 +70,22 @@ public class ProfileActivity extends BaseActivity {
         loadMyRecipes();
         loadSavedRecipes();
 
-        buttonMyRecipes.setOnClickListener(v -> showMyRecipes());
-        buttonSavedRecipes.setOnClickListener(v -> showSavedRecipes());
+        // ברירת מחדל של צבעי הכפתורים
+        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
+        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+
+        // לחיצות על כפתורים עם שינוי צבע מיידי
+        buttonMyRecipes.setOnClickListener(v -> {
+            showMyRecipes();
+            buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
+            buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+        });
+
+        buttonSavedRecipes.setOnClickListener(v -> {
+            showSavedRecipes();
+            buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+            buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
+        });
     }
 
     private void loadUserProfile() {
@@ -182,16 +196,12 @@ public class ProfileActivity extends BaseActivity {
                 .setDuration(150)
                 .withEndAction(() -> {
                     adapter.updateList(myRecipes, myRecipeIds);
-
-                    recyclerViewRecipes.animate()
-                            .alpha(1f)
-                            .setDuration(150)
-                            .start();
+                    recyclerViewRecipes.animate().alpha(1f).setDuration(150).start();
                 })
                 .start();
 
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_active);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive);
+        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
+        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
     }
 
     private void showSavedRecipesAnimated() {
@@ -202,30 +212,25 @@ public class ProfileActivity extends BaseActivity {
                 .setDuration(150)
                 .withEndAction(() -> {
                     adapter.updateList(savedRecipes, savedRecipeIds);
-
-                    recyclerViewRecipes.animate()
-                            .alpha(1f)
-                            .setDuration(150)
-                            .start();
+                    recyclerViewRecipes.animate().alpha(1f).setDuration(150).start();
                 })
                 .start();
 
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active);
+        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
     }
 
-    // למי שרוצה להחליף בלי אנימציה:
     private void showMyRecipes() {
         showingMyRecipes = true;
         adapter.updateList(myRecipes, myRecipeIds);
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_active);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive);
+        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
+        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
     }
 
     private void showSavedRecipes() {
         showingMyRecipes = false;
         adapter.updateList(savedRecipes, savedRecipeIds);
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active);
+        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
     }
 }
