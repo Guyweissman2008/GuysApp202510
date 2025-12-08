@@ -42,21 +42,50 @@
                 android:background="#DDD"
                 android:contentDescription="Recipe Image"
                 android:scaleType="centerCrop"
-                android:src="@mipmap/ic_launcher_round"/>
+                android:src="@drawable/ic_add"/>
 
+            <!-- כפתור מצלמה -->
             <Button
                 android:id="@+id/button_camera"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Open Camera"
-                android:layout_marginTop="12dp"/>
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#E91E63"
+                android:textColor="#FFFFFF"/>
 
+            <!-- כפתור גלריה -->
+            <Button
+                android:id="@+id/button_gallery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="בחר תמונה מהגלריה"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#E91E63"
+                android:textColor="#FFFFFF"/>
+
+            <!-- כפתור הוספת מתכון -->
             <Button
                 android:id="@+id/button_add_recipe"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Add Recipe"
-                android:layout_marginTop="16dp"/>
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#E91E63"
+                android:textColor="#FFFFFF"/>
+
+            <!-- כפתור חזרה קטן -->
+            <Button
+                android:id="@+id/button_back_home"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="חזרה לדף הבית"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#E91E63"
+                android:textColor="#FFFFFF"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:layout_gravity="center_horizontal"/>
         </LinearLayout>
     </ScrollView>
 
@@ -68,4 +97,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:menu="@menu/bottom_nav_menu"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

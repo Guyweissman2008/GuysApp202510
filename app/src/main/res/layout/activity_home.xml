@@ -5,60 +5,85 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFF6FA"
     tools:context=".HomeActivity">
 
-    <!-- EditText לחיפוש -->
+    <!-- כותרת -->
+    <TextView
+        android:id="@+id/title_home"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="All Recipes"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#FF5C8D"
+        android:layout_marginTop="22dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- שדה חיפוש -->
     <EditText
         android:id="@+id/editText_search"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:background="@android:drawable/edit_text"
-        android:hint="Search by name or category"
-        android:padding="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="10dp"
+        android:padding="14dp"
+        android:hint="Search recipes..."
+        android:textColor="#444444"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/title_home"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@android:drawable/edit_text"/>
 
     <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView_recipes"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:padding="12dp"
         app:layout_constraintTop_toBottomOf="@id/editText_search"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:padding="8dp"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- FloatingActionButton להוספת מתכון -->
+    <!-- כפתור הוספת מתכון ורוד -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/button_add_recipe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="18dp"
         android:contentDescription="Add Recipe"
+        android:tint="@android:color/white"
+        android:backgroundTint="#FF5C8D"
         app:srcCompat="@android:drawable/ic_input_add"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="16dp"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- BottomNavigationView -->
+    <!-- ניווט תחתון -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        app:itemIconTint="#781637"
+        app:itemTextColor="#C7577C"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:menu="@menu/bottom_nav_menu"/>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Overlay עם ProgressBar במרכז המסך -->
+    <!-- מסך טעינה -->
     <FrameLayout
         android:id="@+id/progress_overlay"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#80000000"
+        android:background="#66FFBFD7"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -70,7 +95,8 @@
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:layout_gravity="center"
-            android:indeterminate="true"/>
+            android:indeterminate="true"
+            android:indeterminateTint="#FF5C8D"/>
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

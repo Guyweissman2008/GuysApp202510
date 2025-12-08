@@ -22,8 +22,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     private List<Recipe> recipeList;
     private List<String> recipeIds;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
+
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     public RecipeAdapter(List<Recipe> recipeList, List<String> recipeIds) {
         this.recipeList = recipeList;
@@ -43,12 +44,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipeList.get(position);
         String recipeDocId = recipeIds.get(position);
 
+        // כותרת + תיאור + קטגוריה
         holder.title.setText(recipe.getTitle());
         holder.description.setText(recipe.getDescription());
         holder.category.setText("קטגוריה: " + recipe.getCategory());
 
-        // הצגת שם המשתמש
-        if (recipe.getUsername() != null) {
+        // 🔥 הצגת שם המשתמש
+        if (recipe.getUsername() != null && !recipe.getUsername().trim().isEmpty()) {
             holder.username.setText("הועלה על ידי: @" + recipe.getUsername());
         } else {
             holder.username.setText("הועלה על ידי: משתמש אנונימי");
@@ -76,6 +78,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         if (currentUser != null) {
             String docId = currentUser.getUid() + "_" + recipeDocId;
 
+            // בדיקה אם כבר שמור
             db.collection("SavedRecipes").document(docId).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
@@ -85,18 +88,19 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                         }
                     });
 
+            // לחיצה על לב
             holder.saveButton.setOnClickListener(v -> {
                 db.collection("SavedRecipes").document(docId).get()
                         .addOnSuccessListener(documentSnapshot -> {
                             if (documentSnapshot.exists()) {
                                 db.collection("SavedRecipes").document(docId).delete();
                                 holder.saveButton.setImageResource(R.drawable.ic_favorite_border);
-                                Toast.makeText(v.getContext(), "הסרת מתכון מהשמורים", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(v.getContext(), "הוסרה שמירה", Toast.LENGTH_SHORT).show();
                             } else {
                                 db.collection("SavedRecipes").document(docId)
                                         .set(new SavedRecipe(currentUser.getUid(), recipeDocId));
                                 holder.saveButton.setImageResource(R.drawable.ic_favorite_filled);
-                                Toast.makeText(v.getContext(), "מתכון נשמר", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(v.getContext(), "נשמר בהצלחה", Toast.LENGTH_SHORT).show();
                             }
                         });
             });
@@ -115,15 +119,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
-        ImageView image;
-        ImageView saveButton;
-        TextView title;
-        TextView description;
-        TextView category;
-        TextView username;
+
+        ImageView image, saveButton;
+        TextView title, description, category, username;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
+
             image = itemView.findViewById(R.id.image_recipe);
             saveButton = itemView.findViewById(R.id.image_save_recipe);
             title = itemView.findViewById(R.id.text_recipe_title);

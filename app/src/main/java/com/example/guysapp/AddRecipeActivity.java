@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
@@ -34,7 +35,7 @@ public class AddRecipeActivity extends BaseActivity {
 
     private EditText editTitle, editDescription;
     private ImageView imageRecipe;
-    private Button buttonAdd, buttonCamera;
+    private Button buttonAdd, buttonCamera, buttonGallery, buttonBackHome;
     private Spinner spinnerCategory;
 
     private Bitmap selectedBitmap = null;
@@ -46,7 +47,6 @@ public class AddRecipeActivity extends BaseActivity {
 
     private String selectedCategory = "";
 
-    // Launcher לבחירת תמונה מהגלריה
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     result -> {
@@ -56,7 +56,6 @@ public class AddRecipeActivity extends BaseActivity {
                         }
                     });
 
-    // Launcher לבקשת הרשאת מצלמה
     private final ActivityResultLauncher<String> requestCameraPermissionLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.RequestPermission(),
@@ -65,14 +64,11 @@ public class AddRecipeActivity extends BaseActivity {
                         else Toast.makeText(this, "הרשאת מצלמה דרושה כדי לצלם תמונה", Toast.LENGTH_SHORT).show();
                     });
 
-    // Launcher לצילום תמונה מהמצלמה
     private final ActivityResultLauncher<Uri> cameraLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.TakePicture(),
                     result -> {
-                        if (result) {
-                            handleImage(cameraImageUri);
-                        }
+                        if (result) handleImage(cameraImageUri);
                     });
 
     @Override
@@ -87,11 +83,27 @@ public class AddRecipeActivity extends BaseActivity {
         imageRecipe = findViewById(R.id.image_recipe);
         buttonAdd = findViewById(R.id.button_add_recipe);
         buttonCamera = findViewById(R.id.button_camera);
+        buttonGallery = findViewById(R.id.button_gallery);
+        buttonBackHome = findViewById(R.id.button_back_home);
         spinnerCategory = findViewById(R.id.spinner_category);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        int pinkColor = Color.parseColor("#E91E63");
+
+        // צבע ורוד + טקסט לבן
+        buttonAdd.setBackgroundColor(pinkColor);
+        buttonCamera.setBackgroundColor(pinkColor);
+        buttonGallery.setBackgroundColor(pinkColor);
+        buttonBackHome.setBackgroundColor(pinkColor);
+
+        buttonAdd.setTextColor(Color.WHITE);
+        buttonCamera.setTextColor(Color.WHITE);
+        buttonGallery.setTextColor(Color.WHITE);
+        buttonBackHome.setTextColor(Color.WHITE);
+
+        // ספינר
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.recipe_categories,
@@ -112,17 +124,26 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
 
-        imageRecipe.setOnClickListener(v -> {
+        // לחיצה על כפתור גלריה
+        buttonGallery.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             pickImageLauncher.launch(intent);
         });
 
+        // לחיצה על כפתור מצלמה
         buttonCamera.setOnClickListener(v -> takePhoto());
 
+        // לחיצה על כפתור הוספת מתכון
         buttonAdd.setOnClickListener(v -> addRecipe());
+
+        // לחיצה על כפתור חזרה לדף הבית
+        buttonBackHome.setOnClickListener(v -> {
+            Intent intent = new Intent(AddRecipeActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish();
+        });
     }
 
-    // פונקציה לבדיקה ובקשת הרשאת מצלמה
     private void takePhoto() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
@@ -133,7 +154,6 @@ public class AddRecipeActivity extends BaseActivity {
         }
     }
 
-    // פתיחת מצלמה ויצירת URI זמני
     private void openCamera() {
         cameraImageUri = createImageUri();
         if (cameraImageUri != null) {
@@ -143,7 +163,6 @@ public class AddRecipeActivity extends BaseActivity {
         }
     }
 
-    // יצירת URI זמני עבור התמונה שתצולם
     private Uri createImageUri() {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "New Picture");
@@ -151,16 +170,15 @@ public class AddRecipeActivity extends BaseActivity {
         return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
 
-    // טעינת תמונה ל-ImageView ו-Bitmap
     private void handleImage(Uri imageUri) {
         if (imageUri == null) {
             Toast.makeText(this, "Image URI is null", Toast.LENGTH_SHORT).show();
             return;
         }
-
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                selectedBitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), imageUri));
+                selectedBitmap = ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(getContentResolver(), imageUri));
             } else {
                 selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
             }
@@ -172,7 +190,6 @@ public class AddRecipeActivity extends BaseActivity {
         }
     }
 
-    // הוספת המתכון ל-Firestore
     private void addRecipe() {
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();
@@ -196,12 +213,29 @@ public class AddRecipeActivity extends BaseActivity {
 
         String userId = mAuth.getCurrentUser().getUid();
 
+        FBRef.refUsers.document(userId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String username = doc.getString("firstName");
+                        uploadRecipe(title, description, imageDataList, selectedCategory, userId, username);
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load user name", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private void uploadRecipe(String title, String description,
+                              List<Long> imageDataList, String category,
+                              String userId, String username) {
+
         Map<String, Object> recipe = new HashMap<>();
         recipe.put("title", title);
         recipe.put("description", description);
         recipe.put("imageData", imageDataList);
+        recipe.put("category", category);
         recipe.put("userId", userId);
-        recipe.put("category", selectedCategory);
+        recipe.put("username", username);
 
         db.collection("Recipes")
                 .add(recipe)
@@ -209,6 +243,8 @@ public class AddRecipeActivity extends BaseActivity {
                     Toast.makeText(this, "Recipe added!", Toast.LENGTH_SHORT).show();
                     finish();
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to add recipe", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to add recipe", Toast.LENGTH_SHORT).show()
+                );
     }
 }

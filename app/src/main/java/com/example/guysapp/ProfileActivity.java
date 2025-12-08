@@ -1,9 +1,10 @@
 package com.example.guysapp;
 
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -42,6 +44,7 @@ public class ProfileActivity extends BaseActivity {
 
     private Button buttonMyRecipes, buttonSavedRecipes;
     private ProgressBar progressBar;
+    private BottomNavigationView bottomNavigationView;
 
     private boolean showingMyRecipes = true;
 
@@ -50,12 +53,14 @@ public class ProfileActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
+        // findViewById
         profileImage = findViewById(R.id.profile_image);
         textEmail = findViewById(R.id.text_email);
         recyclerViewRecipes = findViewById(R.id.recyclerView_user_recipes);
         buttonMyRecipes = findViewById(R.id.button_my_recipes);
         buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
         progressBar = findViewById(R.id.progressBar);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(new ArrayList<>(), new ArrayList<>());
@@ -66,26 +71,48 @@ public class ProfileActivity extends BaseActivity {
 
         setupBottomNavigation(R.id.nav_profile);
 
+        // צבעי BottomNavigationView דינמיים
+        setupBottomNavColors("#FF5C8D", "#AAAAAA"); // ורוד נבחר, אפור לא נבחר
+
         loadUserProfile();
-        loadMyRecipes();
-        loadSavedRecipes();
+        loadMyRecipesRealtime();
+        loadSavedRecipesRealtime();
 
-        // ברירת מחדל של צבעי הכפתורים
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+        // צבעים התחלתיים לכפתורים
+        setActiveButton(buttonMyRecipes, buttonSavedRecipes);
 
-        // לחיצות על כפתורים עם שינוי צבע מיידי
+        // לחיצות על כפתורים
         buttonMyRecipes.setOnClickListener(v -> {
             showMyRecipes();
-            buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
-            buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
+            setActiveButton(buttonMyRecipes, buttonSavedRecipes);
         });
 
         buttonSavedRecipes.setOnClickListener(v -> {
             showSavedRecipes();
-            buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
-            buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
+            setActiveButton(buttonSavedRecipes, buttonMyRecipes);
         });
+    }
+
+    // פונקציה לשינוי צבעים דינמית ב-BottomNavigationView
+    private void setupBottomNavColors(String selectedHex, String unselectedHex) {
+        int selectedColor = Color.parseColor(selectedHex);
+        int unselectedColor = Color.parseColor(unselectedHex);
+
+        int[][] states = new int[][]{
+                new int[]{android.R.attr.state_checked},
+                new int[]{-android.R.attr.state_checked}
+        };
+        int[] colors = new int[]{selectedColor, unselectedColor};
+
+        ColorStateList csl = new ColorStateList(states, colors);
+        bottomNavigationView.setItemIconTintList(csl);
+        bottomNavigationView.setItemTextColor(csl);
+    }
+
+    // פונקציה לשנות צבע כפתור פעיל
+    private void setActiveButton(Button active, Button inactive) {
+        active.setBackgroundColor(Color.parseColor("#FF5C8D")); // ורוד
+        inactive.setBackgroundColor(Color.parseColor("#DDDDDD")); // אפור
     }
 
     private void loadUserProfile() {
@@ -96,6 +123,7 @@ public class ProfileActivity extends BaseActivity {
         db.collection("Users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
+
                         List<Long> imageData = (List<Long>) documentSnapshot.get("imageData");
                         if (imageData != null) {
                             byte[] bytes = new byte[imageData.size()];
@@ -105,29 +133,32 @@ public class ProfileActivity extends BaseActivity {
                             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                             profileImage.setImageBitmap(bitmap);
                         }
-                        textEmail.setText((String) documentSnapshot.get("firstName") + " " +
-                                (String) documentSnapshot.get("lastName"));
+
+                        textEmail.setText(
+                                documentSnapshot.getString("firstName") + " " +
+                                        documentSnapshot.getString("lastName")
+                        );
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(ProfileActivity.this, "Failed to load profile image", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show());
     }
 
-    private void loadMyRecipes() {
+    private void loadMyRecipesRealtime() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
-
-        progressBar.setVisibility(View.VISIBLE);
 
         String userId = currentUser.getUid();
 
         db.collection("Recipes")
                 .whereEqualTo("userId", userId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null) return;
+
                     myRecipes.clear();
                     myRecipeIds.clear();
 
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
                         Recipe recipe = doc.toObject(Recipe.class);
                         if (recipe != null) {
                             myRecipes.add(recipe);
@@ -135,102 +166,63 @@ public class ProfileActivity extends BaseActivity {
                         }
                     }
 
-                    if (showingMyRecipes) showMyRecipesAnimated();
-                    progressBar.setVisibility(View.GONE);
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(ProfileActivity.this, "Failed to load my recipes", Toast.LENGTH_SHORT).show();
-                    progressBar.setVisibility(View.GONE);
+                    if (showingMyRecipes) {
+                        adapter.updateList(myRecipes, myRecipeIds);
+                    }
                 });
     }
 
-    private void loadSavedRecipes() {
+    private void loadSavedRecipesRealtime() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
-
-        progressBar.setVisibility(View.VISIBLE);
 
         String userId = currentUser.getUid();
 
         db.collection("SavedRecipes")
                 .whereEqualTo("userId", userId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addSnapshotListener((savedSnapshot, e) -> {
+                    if (e != null || savedSnapshot == null) return;
+
                     savedRecipes.clear();
                     savedRecipeIds.clear();
 
                     List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
 
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    for (QueryDocumentSnapshot doc : savedSnapshot) {
                         String recipeId = doc.getString("recipeId");
+
                         if (recipeId != null) {
-                            Task<DocumentSnapshot> task = db.collection("Recipes").document(recipeId).get();
+                            savedRecipeIds.add(recipeId);
+
+                            Task<DocumentSnapshot> task =
+                                    db.collection("Recipes").document(recipeId).get();
+
                             tasks.add(task);
+
                             task.addOnSuccessListener(recipeDoc -> {
                                 Recipe recipe = recipeDoc.toObject(Recipe.class);
                                 if (recipe != null) {
                                     savedRecipes.add(recipe);
-                                    savedRecipeIds.add(recipeId);
                                 }
                             });
                         }
                     }
 
-                    Tasks.whenAllSuccess(tasks)
-                            .addOnSuccessListener(results -> {
-                                if (!showingMyRecipes) showSavedRecipesAnimated();
-                                progressBar.setVisibility(View.GONE);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(ProfileActivity.this, "Failed to load saved recipes", Toast.LENGTH_SHORT).show();
-                    progressBar.setVisibility(View.GONE);
+                    Tasks.whenAllSuccess(tasks).addOnSuccessListener(result -> {
+                        if (!showingMyRecipes) {
+                            adapter.updateList(savedRecipes, savedRecipeIds);
+                        }
+                    });
                 });
-    }
-
-    private void showMyRecipesAnimated() {
-        showingMyRecipes = true;
-
-        recyclerViewRecipes.animate()
-                .alpha(0f)
-                .setDuration(150)
-                .withEndAction(() -> {
-                    adapter.updateList(myRecipes, myRecipeIds);
-                    recyclerViewRecipes.animate().alpha(1f).setDuration(150).start();
-                })
-                .start();
-
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
-    }
-
-    private void showSavedRecipesAnimated() {
-        showingMyRecipes = false;
-
-        recyclerViewRecipes.animate()
-                .alpha(0f)
-                .setDuration(150)
-                .withEndAction(() -> {
-                    adapter.updateList(savedRecipes, savedRecipeIds);
-                    recyclerViewRecipes.animate().alpha(1f).setDuration(150).start();
-                })
-                .start();
-
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
     }
 
     private void showMyRecipes() {
         showingMyRecipes = true;
         adapter.updateList(myRecipes, myRecipeIds);
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_active_pink);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
     }
 
     private void showSavedRecipes() {
         showingMyRecipes = false;
         adapter.updateList(savedRecipes, savedRecipeIds);
-        buttonMyRecipes.setBackgroundResource(R.drawable.button_inactive_pink);
-        buttonSavedRecipes.setBackgroundResource(R.drawable.button_active_pink);
     }
 }
