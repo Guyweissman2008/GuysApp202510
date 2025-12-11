@@ -41,26 +41,41 @@
             android:layout_marginTop="16dp"
             android:gravity="center">
 
-            <Button
-                android:id="@+id/button_my_recipes"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/button_toggle_group"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="המתכונים שלי"
+                app:singleSelection="true"
+                app:checkedButton="@id/button_my_recipes"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
 
-                android:layout_marginEnd="8dp"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_my_recipes"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    app:backgroundTint="@color/button_bg_color"
+                    android:text="המתכונים שלי"
+                    android:textColor="@android:color/white" />
 
-               />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_saved_recipes"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    app:backgroundTint="@color/button_bg_color"
+                    android:text="שמורים"
+                    android:textColor="@android:color/white" />
 
-            <Button
-                android:id="@+id/button_saved_recipes"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
+            </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                android:text="שמורים"
 
-              />
+
+
+
+
+
         </LinearLayout>
     </LinearLayout>
 
@@ -79,13 +94,14 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:background="#FFFFFF"
         app:itemIconTint="#781637"
         app:itemTextColor="#C7577C"
-        app:menu="@menu/bottom_nav_menu"/>
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -97,4 +113,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
 public class BaseActivity extends AppCompatActivity {
 
@@ -16,12 +17,26 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // כאן אין setContentView – כל Activity יגדיר את ה-layout שלו
     }
 
     protected void setupBottomNavigation(int selectedItemId) {
+
         bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav == null) return;
+
+        // ✔ להציג תמיד טקסט + אייקון בתפריט התחתון
+        bottomNav.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_LABELED);
+
+        // ✔ כותרת אוטומטית
+        if (selectedItemId == R.id.nav_home) {
+            setTitle("בית");
+        } else if (selectedItemId == R.id.nav_add) {
+            setTitle("הוסף");
+        } else if (selectedItemId == R.id.nav_profile) {
+            setTitle("פרופיל");
+        } else if (selectedItemId == R.id.nav_logout) {
+            setTitle("התנתק");
+        }
 
         bottomNav.setSelectedItemId(selectedItemId);
 
@@ -29,19 +44,19 @@ public class BaseActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home && selectedItemId != R.id.nav_home) {
-                startActivity(new Intent(BaseActivity.this, HomeActivity.class));
+                startActivity(new Intent(this, HomeActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
 
             } else if (id == R.id.nav_add && selectedItemId != R.id.nav_add) {
-                startActivity(new Intent(BaseActivity.this, AddRecipeActivity.class));
+                startActivity(new Intent(this, AddRecipeActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
 
             } else if (id == R.id.nav_profile && selectedItemId != R.id.nav_profile) {
-                startActivity(new Intent(BaseActivity.this, ProfileActivity.class));
+                startActivity(new Intent(this, ProfileActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;
@@ -66,4 +81,3 @@ public class BaseActivity extends AppCompatActivity {
         finish();
     }
 }
-

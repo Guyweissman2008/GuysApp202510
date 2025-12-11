@@ -90,18 +90,18 @@ public class AddRecipeActivity extends BaseActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        int pinkColor = Color.parseColor("#E91E63");
+        //TODO int pinkColor = Color.parseColor("#E91E63");
 
         // צבע ורוד + טקסט לבן
-        buttonAdd.setBackgroundColor(pinkColor);
-        buttonCamera.setBackgroundColor(pinkColor);
-        buttonGallery.setBackgroundColor(pinkColor);
-        buttonBackHome.setBackgroundColor(pinkColor);
+        //TODO buttonAdd.setBackgroundColor(pinkColor);
+        //TODO buttonCamera.setBackgroundColor(pinkColor);
+        //TODO buttonGallery.setBackgroundColor(pinkColor);
+        //TODO buttonBackHome.setBackgroundColor(pinkColor);
 
-        buttonAdd.setTextColor(Color.WHITE);
-        buttonCamera.setTextColor(Color.WHITE);
-        buttonGallery.setTextColor(Color.WHITE);
-        buttonBackHome.setTextColor(Color.WHITE);
+        //TODO buttonAdd.setTextColor(Color.WHITE);
+        //TODO buttonCamera.setTextColor(Color.WHITE);
+        //TODO buttonGallery.setTextColor(Color.WHITE);
+        //TODO buttonBackHome.setTextColor(Color.WHITE);
 
         // ספינר
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(

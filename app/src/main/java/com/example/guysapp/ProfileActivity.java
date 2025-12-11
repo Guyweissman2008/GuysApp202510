@@ -1,9 +1,7 @@
 package com.example.guysapp;
 
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -44,7 +42,6 @@ public class ProfileActivity extends BaseActivity {
 
     private Button buttonMyRecipes, buttonSavedRecipes;
     private ProgressBar progressBar;
-    private BottomNavigationView bottomNavigationView;
 
     private boolean showingMyRecipes = true;
 
@@ -60,7 +57,6 @@ public class ProfileActivity extends BaseActivity {
         buttonMyRecipes = findViewById(R.id.button_my_recipes);
         buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
         progressBar = findViewById(R.id.progressBar);
-        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(new ArrayList<>(), new ArrayList<>());
@@ -69,51 +65,34 @@ public class ProfileActivity extends BaseActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        // Setup bottom navigation אחיד מכל ה-BaseActivity
         setupBottomNavigation(R.id.nav_profile);
-
-        // צבעי BottomNavigationView דינמיים
-        setupBottomNavColors("#FF5C8D", "#AAAAAA"); // ורוד נבחר, אפור לא נבחר
 
         loadUserProfile();
         loadMyRecipesRealtime();
         loadSavedRecipesRealtime();
 
-        // צבעים התחלתיים לכפתורים
-        setActiveButton(buttonMyRecipes, buttonSavedRecipes);
+        // לחצנים: הגדרת צבעים התחלתיים
+        //TODO setActiveButton(buttonMyRecipes, buttonSavedRecipes);
 
-        // לחיצות על כפתורים
         buttonMyRecipes.setOnClickListener(v -> {
             showMyRecipes();
-            setActiveButton(buttonMyRecipes, buttonSavedRecipes);
+            //TODO setActiveButton(buttonMyRecipes, buttonSavedRecipes);
         });
 
         buttonSavedRecipes.setOnClickListener(v -> {
             showSavedRecipes();
-            setActiveButton(buttonSavedRecipes, buttonMyRecipes);
+            //TODO setActiveButton(buttonSavedRecipes, buttonMyRecipes);
         });
     }
 
-    // פונקציה לשינוי צבעים דינמית ב-BottomNavigationView
-    private void setupBottomNavColors(String selectedHex, String unselectedHex) {
-        int selectedColor = Color.parseColor(selectedHex);
-        int unselectedColor = Color.parseColor(unselectedHex);
-
-        int[][] states = new int[][]{
-                new int[]{android.R.attr.state_checked},
-                new int[]{-android.R.attr.state_checked}
-        };
-        int[] colors = new int[]{selectedColor, unselectedColor};
-
-        ColorStateList csl = new ColorStateList(states, colors);
-        bottomNavigationView.setItemIconTintList(csl);
-        bottomNavigationView.setItemTextColor(csl);
-    }
-
-    // פונקציה לשנות צבע כפתור פעיל
+    // שינוי צבע כפתור פעיל/לא פעיל
+    /*
     private void setActiveButton(Button active, Button inactive) {
-        active.setBackgroundColor(Color.parseColor("#FF5C8D")); // ורוד
-        inactive.setBackgroundColor(Color.parseColor("#DDDDDD")); // אפור
+        active.setBackgroundColor(0xFFFF5C8D); // ורוד
+        inactive.setBackgroundColor(0xFFDDDDDD); // אפור
     }
+     */
 
     private void loadUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();

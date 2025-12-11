@@ -2,7 +2,10 @@ package com.example.guysapp;
 
 import static com.example.guysapp.FBRef.recipesRef;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -32,6 +35,8 @@ public class HomeActivity extends BaseActivity {
     private EditText searchEditText;
     private FrameLayout progressOverlay;
 
+    private NetworkChangeReceiver networkChangeReceiver; // BroadcastReceiver
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +54,13 @@ public class HomeActivity extends BaseActivity {
         recyclerView.setAdapter(adapter);
 
         loadRecipesRealtime();
+
+        // הוספת מאזין לשינויים במצב החיבור
+        networkChangeReceiver = new NetworkChangeReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        intentFilter.addAction("android.net.wifi.WIFI_STATE_CHANGED");
+        registerReceiver(networkChangeReceiver, intentFilter);
 
         addRecipeButton.setOnClickListener(v ->
                 startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class)));
@@ -112,5 +124,13 @@ public class HomeActivity extends BaseActivity {
         }
 
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // ביטול רישום ה-Receiver
+        unregisterReceiver(networkChangeReceiver);
     }
 }
