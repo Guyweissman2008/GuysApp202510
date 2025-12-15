@@ -1,6 +1,8 @@
 package com.example.guysapp;
 
 import android.Manifest;
+import android.widget.ImageButton;
+
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -35,13 +37,13 @@ public class AddRecipeActivity extends BaseActivity {
 
     private EditText editTitle, editDescription;
     private ImageView imageRecipe;
-    private Button buttonAdd, buttonCamera, buttonGallery, buttonBackHome;
+    private Button buttonAdd, buttonCamera, buttonGallery;
     private Spinner spinnerCategory;
 
     private Bitmap selectedBitmap = null;
     private Uri selectedImageUri = null;
     private Uri cameraImageUri = null;
-
+    private ImageButton buttonBackHome;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
@@ -84,7 +86,7 @@ public class AddRecipeActivity extends BaseActivity {
         buttonAdd = findViewById(R.id.button_add_recipe);
         buttonCamera = findViewById(R.id.button_camera);
         buttonGallery = findViewById(R.id.button_gallery);
-        buttonBackHome = findViewById(R.id.button_back_home);
+        buttonBackHome=findViewById(R.id.btnBack);
         spinnerCategory = findViewById(R.id.spinner_category);
 
         mAuth = FirebaseAuth.getInstance();
