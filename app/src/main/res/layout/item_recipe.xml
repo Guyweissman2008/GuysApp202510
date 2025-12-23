@@ -28,10 +28,19 @@
             android:layout_alignParentEnd="true"
             android:layout_margin="8dp"
             android:layout_alignTop="@id/image_recipe"
-            android:src="@drawable/ic_favorite_border"
-            android:contentDescription="שמור מתכון"/>
+            android:src="@drawable/ic_favorite_border"/>
 
-        <!-- תוכן מתכון -->
+        <!-- כפתור מחיקה – רק בפרופיל -->
+        <ImageView
+            android:id="@+id/image_delete_recipe"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignTop="@id/image_recipe"
+            android:layout_toStartOf="@id/image_save_recipe"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_delete"
+            android:visibility="gone"/>
+
         <LinearLayout
             android:layout_below="@id/image_recipe"
             android:layout_width="match_parent"
@@ -39,44 +48,31 @@
             android:orientation="vertical"
             android:padding="8dp">
 
-            <!-- שם המשתמש -->
             <TextView
                 android:id="@+id/text_recipe_username"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="הועלה על ידי: משתמש"
-                android:textStyle="italic"
                 android:textSize="14sp"
-                android:layout_marginTop="4dp"
+                android:textStyle="italic"
                 android:textColor="#555555"/>
 
-            <!-- כותרת מתכון -->
             <TextView
                 android:id="@+id/text_recipe_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Recipe Title"
-                android:textStyle="bold"
                 android:textSize="18sp"
-                android:layout_marginTop="4dp"/>
+                android:textStyle="bold"/>
 
-            <!-- תיאור -->
             <TextView
                 android:id="@+id/text_recipe_description"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Recipe description goes here"
-                android:layout_marginTop="4dp"/>
+                android:layout_height="wrap_content"/>
 
-            <!-- קטגוריה -->
             <TextView
                 android:id="@+id/text_recipe_category"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="קטגוריה: ---"
-                android:textSize="14sp"
                 android:textStyle="italic"
-                android:layout_marginTop="6dp"
                 android:textColor="#555555"/>
         </LinearLayout>
 

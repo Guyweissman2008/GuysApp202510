@@ -13,9 +13,6 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -44,13 +41,13 @@ public class ProfileActivity extends BaseActivity {
     private ProgressBar progressBar;
 
     private boolean showingMyRecipes = true;
+    private String currentUsername;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // findViewById
         profileImage = findViewById(R.id.profile_image);
         textEmail = findViewById(R.id.text_email);
         recyclerViewRecipes = findViewById(R.id.recyclerView_user_recipes);
@@ -65,43 +62,28 @@ public class ProfileActivity extends BaseActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Setup bottom navigation אחיד מכל ה-BaseActivity
         setupBottomNavigation(R.id.nav_profile);
 
         loadUserProfile();
+
+        buttonMyRecipes.setOnClickListener(v -> showMyRecipes());
+        buttonSavedRecipes.setOnClickListener(v -> showSavedRecipes());
+
         loadMyRecipesRealtime();
         loadSavedRecipesRealtime();
-
-        // לחצנים: הגדרת צבעים התחלתיים
-        //TODO setActiveButton(buttonMyRecipes, buttonSavedRecipes);
-
-        buttonMyRecipes.setOnClickListener(v -> {
-            showMyRecipes();
-            //TODO setActiveButton(buttonMyRecipes, buttonSavedRecipes);
-        });
-
-        buttonSavedRecipes.setOnClickListener(v -> {
-            showSavedRecipes();
-            //TODO setActiveButton(buttonSavedRecipes, buttonMyRecipes);
-        });
     }
-
-    // שינוי צבע כפתור פעיל/לא פעיל
-    /*
-    private void setActiveButton(Button active, Button inactive) {
-        active.setBackgroundColor(0xFFFF5C8D); // ורוד
-        inactive.setBackgroundColor(0xFFDDDDDD); // אפור
-    }
-     */
 
     private void loadUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
         String userId = currentUser.getUid();
+
         db.collection("Users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
+
+                        currentUsername = documentSnapshot.getString("email"); // שם המשתמש לשימוש באדפטר
 
                         List<Long> imageData = (List<Long>) documentSnapshot.get("imageData");
                         if (imageData != null) {
@@ -113,10 +95,12 @@ public class ProfileActivity extends BaseActivity {
                             profileImage.setImageBitmap(bitmap);
                         }
 
-                        textEmail.setText(
-                                documentSnapshot.getString("firstName") + " " +
-                                        documentSnapshot.getString("lastName")
-                        );
+                        textEmail.setText(documentSnapshot.getString("firstName") + " " +
+                                documentSnapshot.getString("lastName"));
+
+                        // הגדרת שם המשתמש והצגת מחיקה באדפטר
+                        adapter.setCurrentUsername(currentUsername);
+                        adapter.setShowDelete(true);
                     }
                 })
                 .addOnFailureListener(e ->
@@ -165,33 +149,20 @@ public class ProfileActivity extends BaseActivity {
                     savedRecipes.clear();
                     savedRecipeIds.clear();
 
-                    List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
-
                     for (QueryDocumentSnapshot doc : savedSnapshot) {
                         String recipeId = doc.getString("recipeId");
-
                         if (recipeId != null) {
                             savedRecipeIds.add(recipeId);
-
-                            Task<DocumentSnapshot> task =
-                                    db.collection("Recipes").document(recipeId).get();
-
-                            tasks.add(task);
-
-                            task.addOnSuccessListener(recipeDoc -> {
-                                Recipe recipe = recipeDoc.toObject(Recipe.class);
-                                if (recipe != null) {
-                                    savedRecipes.add(recipe);
-                                }
-                            });
+                            db.collection("Recipes").document(recipeId).get()
+                                    .addOnSuccessListener(recipeDoc -> {
+                                        Recipe recipe = recipeDoc.toObject(Recipe.class);
+                                        if (recipe != null) savedRecipes.add(recipe);
+                                        if (!showingMyRecipes) {
+                                            adapter.updateList(savedRecipes, savedRecipeIds);
+                                        }
+                                    });
                         }
                     }
-
-                    Tasks.whenAllSuccess(tasks).addOnSuccessListener(result -> {
-                        if (!showingMyRecipes) {
-                            adapter.updateList(savedRecipes, savedRecipeIds);
-                        }
-                    });
                 });
     }
 

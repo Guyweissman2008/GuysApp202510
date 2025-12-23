@@ -1,15 +1,9 @@
 package com.example.guysapp;
 
-import static com.example.guysapp.FBRef.recipesRef;
-
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
@@ -23,6 +17,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.guysapp.FBRef.recipesRef;
+
 public class HomeActivity extends BaseActivity {
 
     private FloatingActionButton addRecipeButton;
@@ -34,8 +30,6 @@ public class HomeActivity extends BaseActivity {
     private List<String> filteredIds = new ArrayList<>();
     private EditText searchEditText;
     private FrameLayout progressOverlay;
-
-    private NetworkChangeReceiver networkChangeReceiver; // BroadcastReceiver
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,16 +45,10 @@ public class HomeActivity extends BaseActivity {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(filteredList, filteredIds);
+        adapter.setShowDelete(false); // אין כפתור מחיקה בבית
         recyclerView.setAdapter(adapter);
 
         loadRecipesRealtime();
-
-        // הוספת מאזין לשינויים במצב החיבור
-        networkChangeReceiver = new NetworkChangeReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
-        intentFilter.addAction("android.net.wifi.WIFI_STATE_CHANGED");
-        registerReceiver(networkChangeReceiver, intentFilter);
 
         addRecipeButton.setOnClickListener(v ->
                 startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class)));
@@ -75,13 +63,12 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void loadRecipesRealtime() {
-        // הצג את ה-ProgressBar בזמן טעינה
-        progressOverlay.setVisibility(View.VISIBLE);
+        progressOverlay.setVisibility(FrameLayout.VISIBLE);
 
         recipesRef.addSnapshotListener((queryDocumentSnapshots, e) -> {
             if (e != null) {
                 Toast.makeText(this, "Failed to load recipes", Toast.LENGTH_SHORT).show();
-                progressOverlay.setVisibility(View.GONE);
+                progressOverlay.setVisibility(FrameLayout.GONE);
                 return;
             }
 
@@ -97,9 +84,7 @@ public class HomeActivity extends BaseActivity {
             }
 
             filterRecipes(searchEditText.getText().toString());
-
-            // הסתר את ה-ProgressBar לאחר העדכון
-            progressOverlay.setVisibility(View.GONE);
+            progressOverlay.setVisibility(FrameLayout.GONE);
         });
     }
 
@@ -123,14 +108,6 @@ public class HomeActivity extends BaseActivity {
             }
         }
 
-        adapter.notifyDataSetChanged();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        // ביטול רישום ה-Receiver
-        unregisterReceiver(networkChangeReceiver);
+        adapter.updateList(filteredList, filteredIds);
     }
 }
