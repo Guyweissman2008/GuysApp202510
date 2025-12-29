@@ -109,5 +109,6 @@ public class HomeActivity extends BaseActivity {
         }
 
         adapter.updateList(filteredList, filteredIds);
+        adapter.notifyDataSetChanged();
     }
 }

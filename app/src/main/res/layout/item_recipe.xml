@@ -36,10 +36,9 @@
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_alignTop="@id/image_recipe"
-            android:layout_toStartOf="@id/image_save_recipe"
             android:layout_margin="8dp"
             android:src="@drawable/ic_delete"
-            android:visibility="gone"/>
+            android:layout_alignParentStart="true"/>
 
         <LinearLayout
             android:layout_below="@id/image_recipe"

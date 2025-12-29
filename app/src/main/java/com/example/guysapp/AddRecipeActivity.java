@@ -1,12 +1,9 @@
 package com.example.guysapp;
 
 import android.Manifest;
-import android.widget.ImageButton;
-
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
@@ -15,6 +12,7 @@ import android.provider.MediaStore;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -39,11 +37,11 @@ public class AddRecipeActivity extends BaseActivity {
     private ImageView imageRecipe;
     private Button buttonAdd, buttonCamera, buttonGallery;
     private Spinner spinnerCategory;
+    private ImageButton buttonBackHome;
 
     private Bitmap selectedBitmap = null;
     private Uri selectedImageUri = null;
     private Uri cameraImageUri = null;
-    private ImageButton buttonBackHome;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
@@ -86,24 +84,11 @@ public class AddRecipeActivity extends BaseActivity {
         buttonAdd = findViewById(R.id.button_add_recipe);
         buttonCamera = findViewById(R.id.button_camera);
         buttonGallery = findViewById(R.id.button_gallery);
-        buttonBackHome=findViewById(R.id.btnBack);
+        buttonBackHome = findViewById(R.id.btnBack);
         spinnerCategory = findViewById(R.id.spinner_category);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-
-        //TODO int pinkColor = Color.parseColor("#E91E63");
-
-        // צבע ורוד + טקסט לבן
-        //TODO buttonAdd.setBackgroundColor(pinkColor);
-        //TODO buttonCamera.setBackgroundColor(pinkColor);
-        //TODO buttonGallery.setBackgroundColor(pinkColor);
-        //TODO buttonBackHome.setBackgroundColor(pinkColor);
-
-        //TODO buttonAdd.setTextColor(Color.WHITE);
-        //TODO buttonCamera.setTextColor(Color.WHITE);
-        //TODO buttonGallery.setTextColor(Color.WHITE);
-        //TODO buttonBackHome.setTextColor(Color.WHITE);
 
         // ספינר
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -126,19 +111,15 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
 
-        // לחיצה על כפתור גלריה
         buttonGallery.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             pickImageLauncher.launch(intent);
         });
 
-        // לחיצה על כפתור מצלמה
         buttonCamera.setOnClickListener(v -> takePhoto());
 
-        // לחיצה על כפתור הוספת מתכון
         buttonAdd.setOnClickListener(v -> addRecipe());
 
-        // לחיצה על כפתור חזרה לדף הבית
         buttonBackHome.setOnClickListener(v -> {
             Intent intent = new Intent(AddRecipeActivity.this, HomeActivity.class);
             startActivity(intent);
@@ -206,12 +187,13 @@ public class AddRecipeActivity extends BaseActivity {
             return;
         }
 
+        // המרה ל-List<Integer> במקום List<Long>
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] bytes = baos.toByteArray();
 
-        List<Long> imageDataList = new ArrayList<>();
-        for (byte b : bytes) imageDataList.add((long) b);
+        List<Integer> imageDataList = new ArrayList<>();
+        for (byte b : bytes) imageDataList.add(b & 0xFF);
 
         String userId = mAuth.getCurrentUser().getUid();
 
@@ -228,13 +210,13 @@ public class AddRecipeActivity extends BaseActivity {
     }
 
     private void uploadRecipe(String title, String description,
-                              List<Long> imageDataList, String category,
+                              List<Integer> imageDataList, String category,
                               String userId, String username) {
 
         Map<String, Object> recipe = new HashMap<>();
         recipe.put("title", title);
         recipe.put("description", description);
-        recipe.put("imageData", imageDataList);
+        recipe.put("imageData", imageDataList); // List<Integer> - Firestore compatible
         recipe.put("category", category);
         recipe.put("userId", userId);
         recipe.put("username", username);
