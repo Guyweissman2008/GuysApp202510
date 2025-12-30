@@ -4,17 +4,26 @@ import java.util.List;
 
 public class Recipe {
 
+    private String recipeId;
     private String title;
     private String description;
-    private List<Integer> imageData; // תמונה כ-List<Integer>
     private String category;
-    private String username;   // שם המשתמש להצגה במסך
-    private String userId;     // UID של המשתמש, לצורך הרשאות מחיקה
+    private List<Integer> imageData;
+    private String username;
+    private String userId;
 
-    public Recipe() {}
+    // חובה ל-Firestore
+    public Recipe() { }
 
-    public Recipe(String title, String description, List<Integer> imageData,
-                  String category, String username, String userId) {
+    public Recipe(String recipeId,
+                  String title,
+                  String description,
+                  List<Integer> imageData,
+                  String category,
+                  String username,
+                  String userId) {
+
+        this.recipeId = recipeId;
         this.title = title;
         this.description = description;
         this.imageData = imageData;
@@ -23,32 +32,75 @@ public class Recipe {
         this.userId = userId;
     }
 
-    // Getters & Setters
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getRecipeId() {
+        return recipeId;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setRecipeId(String recipeId) {
+        this.recipeId = recipeId;
+    }
 
-    public List<Integer> getImageData() { return imageData; }
-    public void setImageData(List<Integer> imageData) { this.imageData = imageData; }
+    public String getTitle() {
+        return title;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getDescription() {
+        return description;
+    }
 
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    // מתודה להמרת List<Integer> ל-byte[] עבור Bitmap
-    public byte[] getImageDataAsBytes() {
-        if (imageData == null) return null;
-        byte[] bytes = new byte[imageData.size()];
-        for (int i = 0; i < imageData.size(); i++) {
-            bytes[i] = imageData.get(i).byteValue();
+    public List<Integer> getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(List<Integer> imageData) {
+        this.imageData = imageData;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    // המרת List<Integer> ל-byte[] עבור Bitmap
+    public byte[] imageDataToBytes() {
+        if (imageData == null) {
+            return null;
         }
+
+        byte[] bytes = new byte[imageData.size()];
+
+        for (int i = 0; i < imageData.size(); i++) {
+            Integer val = imageData.get(i);
+            bytes[i] = (val != null) ? val.byteValue() : 0;
+        }
+
         return bytes;
     }
 }

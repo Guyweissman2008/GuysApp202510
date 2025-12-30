@@ -3,180 +3,324 @@ package com.example.guysapp;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProfileActivity extends BaseActivity {
 
+    // UI
     private ImageView profileImage;
     private TextView textEmail;
     private RecyclerView recyclerViewRecipes;
-    private RecipeAdapter adapter;
-
-    private List<Recipe> myRecipes = new ArrayList<>();
-    private List<String> myRecipeIds = new ArrayList<>();
-    private List<Recipe> savedRecipes = new ArrayList<>();
-    private List<String> savedRecipeIds = new ArrayList<>();
-
-    private Button buttonMyRecipes, buttonSavedRecipes;
+    private Button buttonMyRecipes;
+    private Button buttonSavedRecipes;
     private ProgressBar progressBar;
 
+    private RecipeAdapter adapter;
+
+    private final List<Recipe> myRecipes = new ArrayList<>();
+    private final List<Recipe> savedRecipes = new ArrayList<>();
+
     private boolean showingMyRecipes = true;
-    private String currentUserEmail;
-    private ListenerRegistration savedIdsListener;
+
+    private ListenerRegistration myRecipesListener;
+    private ListenerRegistration savedRecipesListener;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        profileImage = findViewById(R.id.profile_image);
-        textEmail = findViewById(R.id.text_email);
-        recyclerViewRecipes = findViewById(R.id.recyclerView_user_recipes);
-        buttonMyRecipes = findViewById(R.id.button_my_recipes);
-        buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
-        progressBar = findViewById(R.id.progressBar);
-
-        recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RecipeAdapter(new ArrayList<>(), new ArrayList<>());
-        recyclerViewRecipes.setAdapter(adapter);
-
         setupBottomNavigation(R.id.nav_profile);
 
-        buttonMyRecipes.setOnClickListener(v -> showMyRecipes());
-        buttonSavedRecipes.setOnClickListener(v -> showSavedRecipes());
+        initViews();
+        setupRecyclerView();
+        setupListeners();
 
         loadUserProfile();
     }
 
-    private void loadUserProfile() {
-        FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-        if (currentUser == null) return;
+    @Override
+    protected void onStop() {
+        super.onStop();
 
-        String userId = currentUser.getUid();
-        adapter.setCurrentUserID(userId); // <-- current user's UID for ownership checks
-        adapter.setShowDelete(true);
+        // לא להשאיר מאזינים פתוחים כשעוזבים מסך
+        removeListener(myRecipesListener);
+        myRecipesListener = null;
 
-        FBRef.refUsers.document(userId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) return;
-
-                    currentUserEmail = documentSnapshot.getString("email");
-
-                    // תמונת פרופיל
-                    List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
-                    if (imageDataRaw != null && !imageDataRaw.isEmpty()) {
-                        byte[] bytes = new byte[imageDataRaw.size()];
-                        for (int i = 0; i < imageDataRaw.size(); i++) {
-                            Object o = imageDataRaw.get(i);
-                            int value;
-                            if (o instanceof Long) value = ((Long) o).intValue();
-                            else if (o instanceof Integer) value = (Integer) o;
-                            else value = 0; // fallback
-                            bytes[i] = (byte) value;
-                        }
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        profileImage.setImageBitmap(bitmap);
-                    }
-
-                    // שם מלא
-                    String firstName = documentSnapshot.getString("firstName");
-                    String lastName = documentSnapshot.getString("lastName");
-                    textEmail.setText((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : ""));
-
-                    loadMyRecipesRealtime();
-                    loadSavedRecipesRealtime();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load profile", Toast.LENGTH_SHORT).show());
+        removeListener(savedRecipesListener);
+        savedRecipesListener = null;
     }
 
+    private void initViews() {
+        profileImage = findViewById(R.id.profile_image);
+        textEmail = findViewById(R.id.text_email);
+        recyclerViewRecipes = findViewById(R.id.recyclerView_user_recipes);
 
-    private void loadMyRecipesRealtime() {
-        if (FBRef.mAuth.getCurrentUser() == null) return;
-        String userId = FBRef.mAuth.getCurrentUser().getUid();
+        buttonMyRecipes = findViewById(R.id.button_my_recipes);
+        buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
+        progressBar = findViewById(R.id.progressBar);
+    }
 
-        FBRef.recipesRef.whereEqualTo("userId", userId)
-                .addSnapshotListener((snapshot, e) -> {
-                    if (e != null || snapshot == null) return;
+    private void setupRecyclerView() {
+        recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new RecipeAdapter(new ArrayList<>());
+        recyclerViewRecipes.setAdapter(adapter);
+    }
 
-                    myRecipes.clear();
-                    myRecipeIds.clear();
+    private void setupListeners() {
+        buttonMyRecipes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showMyRecipes();
+            }
+        });
 
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        Recipe recipe = doc.toObject(Recipe.class);
-                        if (recipe != null) {
-                            myRecipes.add(recipe);
-                            myRecipeIds.add(doc.getId());
+        buttonSavedRecipes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSavedRecipes();
+            }
+        });
+    }
+
+    private void removeListener(ListenerRegistration listener) {
+        if (listener != null) {
+            listener.remove();
+        }
+    }
+
+    private void loadUserProfile() {
+        FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        String userId = currentUser.getUid();
+
+        adapter.setSavedScreen(false);
+        adapter.setShowDelete(true);
+        adapter.setCurrentUserID(userId);
+
+        progressBar.setVisibility(View.VISIBLE);
+
+        FBRef.refUsers.document(userId).get()
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        progressBar.setVisibility(View.GONE);
+
+                        if (!documentSnapshot.exists()) {
+                            return;
                         }
-                    }
 
-                    if (showingMyRecipes) {
-                        adapter.updateList(myRecipes, myRecipeIds);
+                        setProfileImageIfExists(documentSnapshot);
+                        setFullName(documentSnapshot);
+
+                        loadMyRecipesRealtime(userId);
+                        loadSavedRecipesRealtime(userId);
+                        loadSavedRecipeIdsForHearts(userId);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(ProfileActivity.this,
+                                "Failed to load profile",
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
-    private void loadSavedRecipesRealtime() {
-        if (FBRef.mAuth.getCurrentUser() == null) return;
+    private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
+        List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
+        if (imageDataRaw == null || imageDataRaw.isEmpty()) {
+            return;
+        }
 
-        if (savedIdsListener != null) savedIdsListener.remove();
+        byte[] bytes = new byte[imageDataRaw.size()];
 
-        savedIdsListener = FBRef.FBFS.collection("SavedRecipes")
-                .whereEqualTo("userId", FBRef.mAuth.getCurrentUser().getUid())
-                .addSnapshotListener((snapshot, e) -> {
-                    if (e != null || snapshot == null) return;
+        for (int i = 0; i < imageDataRaw.size(); i++) {
+            Object o = imageDataRaw.get(i);
 
-                    savedRecipes.clear();
-                    savedRecipeIds.clear();
+            int value;
+            if (o instanceof Long) {
+                value = ((Long) o).intValue();
+            } else if (o instanceof Integer) {
+                value = (Integer) o;
+            } else {
+                value = 0;
+            }
 
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        SavedRecipe saved = doc.toObject(SavedRecipe.class);
-                        if (saved == null) continue;
+            bytes[i] = (byte) value;
+        }
 
-                        Recipe recipe = new Recipe();
-                        recipe.setTitle(saved.getTitle());
-                        recipe.setUsername(saved.getAuthorName());       // שם היוצר
-                        recipe.setUserId(saved.getRecipeOwnerId());      // UID של היוצר המקורי
-                        recipe.setImageData(saved.getImageData());
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        profileImage.setImageBitmap(bitmap);
+    }
 
-                        savedRecipes.add(recipe);
-                        savedRecipeIds.add(saved.getRecipeId());
+    private void setFullName(DocumentSnapshot documentSnapshot) {
+        String firstName = documentSnapshot.getString("firstName");
+        String lastName = documentSnapshot.getString("lastName");
 
-                        // העתקת imageData כ-List<Integer>
-                        recipe.setImageData(saved.getImageData());
+        String fullName =
+                (firstName != null ? firstName : "") + " " +
+                        (lastName != null ? lastName : "");
 
-                        savedRecipes.add(recipe);
-                        savedRecipeIds.add(saved.getRecipeId());
+        textEmail.setText(fullName.trim());
+    }
+
+    private void loadMyRecipesRealtime(String userId) {
+        removeListener(myRecipesListener);
+
+        myRecipesListener = FBRef.refRecipes
+                .whereEqualTo("userId", userId)
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot snapshot,
+                                        @Nullable FirebaseFirestoreException e) {
+
+                        if (e != null || snapshot == null) {
+                            return;
+                        }
+
+                        myRecipes.clear();
+
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            Recipe recipe = doc.toObject(Recipe.class);
+                            if (recipe == null) {
+                                continue;
+                            }
+
+                            recipe.setRecipeId(doc.getId());
+                            myRecipes.add(recipe);
+                        }
+
+                        if (showingMyRecipes) {
+                            adapter.updateList(myRecipes);
+                        }
                     }
+                });
+    }
 
-                    if (!showingMyRecipes) {
-                        adapter.updateList(savedRecipes, savedRecipeIds);
+    private void loadSavedRecipesRealtime(String userId) {
+        removeListener(savedRecipesListener);
+
+        savedRecipesListener = FBRef.refSavedRecipes
+                .whereEqualTo("userId", userId)
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot snapshot,
+                                        @Nullable FirebaseFirestoreException e) {
+
+                        if (e != null || snapshot == null) {
+                            return;
+                        }
+
+                        savedRecipes.clear();
+
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            SavedRecipe saved = doc.toObject(SavedRecipe.class);
+                            if (saved == null) {
+                                cleanInvalidSavedRecipe(doc.getId()); // fix old bug
+                                continue;
+                            }
+
+                            String rid = saved.getRecipeId();
+                            if (rid == null || rid.isEmpty()) {
+                                continue;
+                            }
+
+                            Recipe recipe = new Recipe();
+                            recipe.setRecipeId(rid); // חשוב: זה ה-ID של המתכון המקורי
+                            recipe.setTitle(saved.getTitle());
+                            recipe.setUsername(saved.getAuthorName());
+                            recipe.setUserId(saved.getRecipeOwnerId());
+                            recipe.setImageData(saved.getImageData());
+
+                            savedRecipes.add(recipe);
+                        }
+
+                        if (!showingMyRecipes) {
+                            adapter.updateList(savedRecipes);
+                        }
+                    }
+                });
+    }
+
+    // כדי שהלב במסך פרופיל יוצג נכון גם ברשימת "שמורים"
+    private void loadSavedRecipeIdsForHearts(String userId) {
+        FBRef.refSavedRecipes
+                .whereEqualTo("userId", userId)
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot snapshots,
+                                        @Nullable FirebaseFirestoreException e) {
+
+                        if (e != null || snapshots == null) {
+                            return;
+                        }
+
+                        Set<String> ids = new HashSet<>();
+
+                        for (QueryDocumentSnapshot doc : snapshots) {
+                            SavedRecipe saved = doc.toObject(SavedRecipe.class);
+                            if (saved != null && saved.getRecipeId() != null) {
+                                ids.add(saved.getRecipeId());
+                            }
+                        }
+
+                        adapter.setSavedIds(ids);
                     }
                 });
     }
 
     private void showMyRecipes() {
         showingMyRecipes = true;
-        adapter.updateList(myRecipes, myRecipeIds);
+
+        adapter.setSavedScreen(false);
+        adapter.setShowDelete(true);
+
+        adapter.updateList(myRecipes);
     }
 
     private void showSavedRecipes() {
         showingMyRecipes = false;
-        adapter.updateList(savedRecipes, savedRecipeIds);
+
+        adapter.setSavedScreen(true);   // אנחנו במסך שמורים
+        adapter.setShowDelete(true);    // מאפשר X רק אם אני owner
+
+        adapter.updateList(savedRecipes);
+    }
+
+    private void cleanInvalidSavedRecipe(String savedDocId) {
+        FBRef.refSavedRecipes
+                .document(savedDocId)
+                .delete();
     }
 }

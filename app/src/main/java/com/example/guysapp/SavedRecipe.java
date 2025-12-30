@@ -1,21 +1,29 @@
 package com.example.guysapp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SavedRecipe {
-    private String authUserId;      // ה-UID של המשתמש ששמר את המתכון
-    private String recipeId;        // ID של המתכון המקורי
+
+
+    private String userId;      // המשתמש ששמר את המתכון
+    private String recipeId;    // המתכון המקורי
     private String title;
     private List<Integer> imageData;
-    private String authorName;      // שם היוצר המקורי
-    private String recipeOwnerId;   // UID של היוצר המקורי
+    private String authorName;      // פרטי היוצר המקורי (לתצוגה והרשאות)
+    private String recipeOwnerId;   // פרטי היוצר המקורי (לתצוגה והרשאות)
 
+    // חובה ל-Firestore
     public SavedRecipe() {
     }
 
-    public SavedRecipe(String authUserId, String recipeId, String title, List<Integer> imageData, String authorName, String recipeOwnerId) {
-        this.authUserId = authUserId;
+    public SavedRecipe(String userId,
+                       String recipeId,
+                       String title,
+                       List<Integer> imageData,
+                       String authorName,
+                       String recipeOwnerId) {
+
+        this.userId = userId;
         this.recipeId = recipeId;
         this.title = title;
         this.imageData = imageData;
@@ -23,12 +31,12 @@ public class SavedRecipe {
         this.recipeOwnerId = recipeOwnerId;
     }
 
-    public String getAuthUserId() {
-        return authUserId;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setAuthUserId(String authUserId) {
-        this.authUserId = authUserId;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getRecipeId() {
