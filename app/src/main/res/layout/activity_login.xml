@@ -5,57 +5,63 @@
     android:orientation="vertical"
     android:padding="24dp"
     android:gravity="center"
-    android:background="#FFF4F8"> <!-- רקע ורוד בהיר מאוד -->
+    android:background="#FFFFFF">
 
-    <!-- שדה אימייל -->
+    <!-- כותרת -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="התחברות"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="32dp" />
+
+    <!-- אימייל -->
     <EditText
         android:id="@+id/edittext_email"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:hint="Email"
         android:inputType="textEmailAddress"
-        android:background="#FFFFFFFF"
-        android:backgroundTint="#FFD6E0"
-        android:textColor="#FF6F91"
-        android:textColorHint="#FFB6C1"
-        android:padding="10dp"
-        android:layout_marginBottom="12dp" />
+        android:background="@android:drawable/edit_text"
+        android:textColor="#333333"
+        android:textColorHint="#999999"
+        android:paddingHorizontal="12dp"
+        android:layout_marginBottom="16dp" />
 
-    <!-- שדה סיסמה -->
+    <!-- סיסמה -->
     <EditText
         android:id="@+id/edittext_password"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:hint="Password"
         android:inputType="textPassword"
-        android:background="#FFFFFFFF"
-        android:backgroundTint="#FFD6E0"
-        android:textColor="#FF6F91"
-        android:textColorHint="#FFB6C1"
-        android:padding="10dp"
-        android:layout_marginBottom="20dp" />
+        android:background="@android:drawable/edit_text"
+        android:textColor="#333333"
+        android:textColorHint="#999999"
+        android:paddingHorizontal="12dp"
+        android:layout_marginBottom="24dp" />
 
     <!-- כפתור התחברות -->
     <Button
         android:id="@+id/button_login"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="Login"
         android:textColor="#FFFFFF"
-        android:backgroundTint="#FFAEC9"
-        android:paddingVertical="12dp"
-        android:elevation="3dp"
+        android:backgroundTint="#FF6F91"
+        android:elevation="4dp"
         android:layout_marginBottom="16dp" />
 
     <!-- כפתור הרשמה -->
     <Button
         android:id="@+id/button_register"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Don't have an account? Register here"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#FFB6C1"
-        android:paddingVertical="12dp"
+        android:layout_height="48dp"
+        android:text="Register"
+        android:textColor="#FF6F91"
+        android:backgroundTint="#EEEEEE"
         android:elevation="2dp" />
 
 </LinearLayout>
