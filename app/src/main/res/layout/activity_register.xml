@@ -2,14 +2,24 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF4F8">
+    android:background="#FFFFFF">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="24dp"
-        android:gravity="center_horizontal">
+        android:gravity="center">
+
+        <!-- כותרת -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Register"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="24dp" />
 
         <!-- תמונת פרופיל -->
         <ImageView
@@ -18,126 +28,115 @@
             android:layout_height="120dp"
             android:src="@mipmap/ic_launcher_round"
             android:scaleType="centerCrop"
-            android:layout_marginBottom="12dp"
-            android:background="#FFE6EB"
-            android:padding="8dp"
-            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:background="@android:color/darker_gray"
             android:clipToOutline="true" />
 
-        <!-- כפתור לבחירת תמונה מהגלריה -->
+        <!-- בחירת תמונה -->
         <Button
             android:id="@+id/button_choose_image"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="Choose Image"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="10dp"
-            android:elevation="2dp" />
+            android:backgroundTint="#FF6F91"
+            android:layout_marginBottom="8dp" />
 
-        <!-- כפתור לצילום תמונה מהמצלמה -->
+        <!-- צילום תמונה -->
         <Button
             android:id="@+id/button_take_photo"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="Take Photo"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#FF8FAB"
-            android:layout_marginBottom="16dp"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="10dp"
-            android:elevation="2dp" />
+            android:textColor="#FF6F91"
+            android:backgroundTint="#EEEEEE"
+            android:layout_marginBottom="24dp" />
 
         <!-- First Name -->
         <EditText
             android:id="@+id/edittext_first_name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="First Name"
-            android:backgroundTint="#FFD6E0"
-            android:textColor="#FF6F91"
-            android:textColorHint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:padding="10dp"
-            android:background="#FFFFFFFF" />
+            android:background="@android:drawable/edit_text"
+            android:textColor="#333333"
+            android:textColorHint="#999999"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp" />
 
         <!-- Last Name -->
         <EditText
             android:id="@+id/edittext_last_name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Last Name"
-            android:backgroundTint="#FFD6E0"
-            android:textColor="#FF6F91"
-            android:textColorHint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:padding="10dp"
-            android:background="#FFFFFFFF" />
+            android:background="@android:drawable/edit_text"
+            android:textColor="#333333"
+            android:textColorHint="#999999"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp" />
 
         <!-- Email -->
         <EditText
             android:id="@+id/edittext_email"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Email"
             android:inputType="textEmailAddress"
-            android:backgroundTint="#FFD6E0"
-            android:textColor="#FF6F91"
-            android:textColorHint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:padding="10dp"
-            android:background="#FFFFFFFF" />
+            android:background="@android:drawable/edit_text"
+            android:textColor="#333333"
+            android:textColorHint="#999999"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp" />
 
         <!-- Password -->
         <EditText
             android:id="@+id/edittext_password"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Password"
             android:inputType="textPassword"
-            android:backgroundTint="#FFD6E0"
-            android:textColor="#FF6F91"
-            android:textColorHint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:padding="10dp"
-            android:background="#FFFFFFFF" />
+            android:background="@android:drawable/edit_text"
+            android:textColor="#333333"
+            android:textColorHint="#999999"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp" />
 
-        <!-- Confirm Password (נוסף חדש) -->
+        <!-- Confirm Password -->
         <EditText
             android:id="@+id/edittext_confirm_password"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Confirm Password"
             android:inputType="textPassword"
-            android:backgroundTint="#FFD6E0"
-            android:textColor="#FF6F91"
-            android:textColorHint="#FFB6C1"
-            android:layout_marginBottom="8dp"
-            android:padding="10dp"
-            android:background="#FFFFFFFF" />
+            android:background="@android:drawable/edit_text"
+            android:textColor="#333333"
+            android:textColorHint="#999999"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="16dp" />
 
-        <!-- Notifications -->
-        <CheckBox
-            android:id="@+id/checkbox_notifications"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Allow Notifications"
-            android:textColor="#FF8FAB"
-            android:buttonTint="#FFB6C1"
-            android:layout_marginBottom="20dp" />
 
         <!-- Register Button -->
         <Button
             android:id="@+id/button_register"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:text="Register"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#FFAEC9"
-            android:paddingVertical="12dp"
-            android:elevation="3dp" />
+            android:backgroundTint="#FF6F91"
+            android:elevation="4dp" />
+        <!-- Already have an account -->
+        <TextView
+            android:id="@+id/text_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="do you already have an acount?log in"
+            android:textColor="#FF6F91"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"
+            android:clickable="true"
+            android:focusable="true" />
+
 
     </LinearLayout>
 </ScrollView>

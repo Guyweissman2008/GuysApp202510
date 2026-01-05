@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="התחברות"
+        android:text="Login"
         android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="#333333"
@@ -59,7 +59,7 @@
         android:id="@+id/button_register"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="Register"
+        android:text="dont have an acount?register"
         android:textColor="#FF6F91"
         android:backgroundTint="#EEEEEE"
         android:elevation="2dp" />

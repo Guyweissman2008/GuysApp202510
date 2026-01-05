@@ -31,14 +31,29 @@
             android:src="@drawable/ic_favorite_border"/>
 
         <!-- כפתור מחיקה – רק בפרופיל -->
+        <!-- כפתור עריכה – רק לבעלים -->
         <ImageView
             android:id="@+id/image_delete_recipe"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_alignTop="@id/image_recipe"
+            android:layout_alignParentStart="true"
             android:layout_margin="8dp"
-            android:src="@drawable/ic_delete"
-            android:layout_alignParentStart="true"/>
+            android:layout_marginStart="42dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:src="@drawable/ic_delete" />
+
+        <ImageView
+            android:id="@+id/image_edit_recipe"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignTop="@id/image_recipe"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="6dp"
+            android:layout_toEndOf="@id/image_delete_recipe"
+            android:src="@drawable/ic_edit" />
 
         <LinearLayout
             android:layout_below="@id/image_recipe"

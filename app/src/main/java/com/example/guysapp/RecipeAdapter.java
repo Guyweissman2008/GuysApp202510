@@ -1,5 +1,6 @@
 package com.example.guysapp;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
@@ -26,12 +27,9 @@ import java.util.Set;
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     private List<Recipe> recipeList;
-
     private String currentUserID;
     private boolean showDelete = false;
     private boolean isSavedScreen = false;
-
-    // סט של IDs של מתכונים שהמשתמש שמר (לב מלא/ריק בצורה יציבה)
     private Set<String> savedIds = new HashSet<>();
 
     public RecipeAdapter(List<Recipe> recipeList) {
@@ -71,14 +69,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     @Override
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
         Recipe recipe = recipeList.get(position);
-
-        // ID של המתכון מגיע מתוך האובייקט
         String recipeId = recipe.getRecipeId();
 
         holder.title.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
         holder.description.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
         holder.category.setText("קטגוריה: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
-
         String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "משתמש אנונימי";
         holder.username.setText("הועלה על ידי: " + displayAuthor);
 
@@ -86,6 +81,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         bindSaveState(holder, recipeId);
         bindSaveClick(holder, recipe, recipeId, displayAuthor);
         bindDeleteClick(holder, recipeId, recipe);
+        bindEditClick(holder, recipeId, recipe);
     }
 
     @Override
@@ -120,14 +116,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                String recipeId,
                                String displayAuthor) {
 
-        // אם אין ID (תקלה בטעינה) - לא מאפשרים שמירה
-        if (recipeId == null || recipeId.isEmpty()) {
-            holder.saveButton.setOnClickListener(null);
-            return;
-        }
-
-        // אם אין משתמש מחובר – לא מאפשרים שמירה
-        if (FBRef.mAuth.getCurrentUser() == null) {
+        if (recipeId == null || recipeId.isEmpty() || FBRef.mAuth.getCurrentUser() == null) {
             holder.saveButton.setOnClickListener(null);
             return;
         }
@@ -137,55 +126,42 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             public void onClick(View v) {
 
                 int pos = holder.getAdapterPosition();
-                if (pos == RecyclerView.NO_POSITION) {
-                    return;
-                }
+                if (pos == RecyclerView.NO_POSITION) return;
 
                 String uid = FBRef.mAuth.getCurrentUser().getUid();
                 String docId = buildSavedDocId(uid, recipeId);
 
                 FBRef.refSavedRecipes.document(docId).get()
-                        .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                            @Override
-                            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        .addOnSuccessListener(documentSnapshot -> {
 
-                                if (documentSnapshot.exists()) {
-                                    // ביטול שמירה
-                                    FBRef.refSavedRecipes.document(docId).delete()
-                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void aVoid) {
-                                                    savedIds.remove(recipeId);
-                                                    notifyDataSetChanged();
-                                                    Toast.makeText(v.getContext(),
-                                                            "הוסרה שמירה",
-                                                            Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                } else {
-                                    // שמירה
-                                    SavedRecipe savedRecipe = new SavedRecipe(
-                                            uid,               // userId של המשתמש ששמר
-                                            recipeId,          // ID של המתכון המקורי
-                                            recipe.getTitle(),
-                                            recipe.getImageData(),
-                                            displayAuthor,     // שם היוצר המקורי
-                                            recipe.getUserId() // UID של היוצר המקורי
-                                    );
+                            if (documentSnapshot.exists()) {
+                                FBRef.refSavedRecipes.document(docId).delete()
+                                        .addOnSuccessListener(aVoid -> {
+                                            savedIds.remove(recipeId);
+                                            notifyDataSetChanged();
+                                            Toast.makeText(v.getContext(),
+                                                    "הוסרה שמירה",
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
+                            } else {
+                                SavedRecipe savedRecipe = new SavedRecipe(
+                                        uid,
+                                        recipeId,
+                                        recipe.getTitle(),
+                                        recipe.getImageData(),
+                                        displayAuthor,
+                                        recipe.getUserId()
+                                );
 
-                                    FBRef.refSavedRecipes.document(docId)
-                                            .set(savedRecipe)
-                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void aVoid) {
-                                                    savedIds.add(recipeId);
-                                                    notifyDataSetChanged();
-                                                    Toast.makeText(v.getContext(),
-                                                            "נשמר בהצלחה",
-                                                            Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                }
+                                FBRef.refSavedRecipes.document(docId)
+                                        .set(savedRecipe)
+                                        .addOnSuccessListener(aVoid -> {
+                                            savedIds.add(recipeId);
+                                            notifyDataSetChanged();
+                                            Toast.makeText(v.getContext(),
+                                                    "נשמר בהצלחה",
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
                             }
                         });
             }
@@ -196,63 +172,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                  String recipeId,
                                  Recipe recipe) {
 
-        // מסך "שמורים": X רק אם אני ה-owner (מחיקת המתכון האמיתי)
-        if (isSavedScreen) {
-            boolean iAmOwner = currentUserID != null
-                    && recipe != null
-                    && recipe.getUserId() != null
-                    && currentUserID.equals(recipe.getUserId())
-                    && recipeId != null
-                    && !recipeId.isEmpty();
-
-            if (!iAmOwner) {
-                holder.deleteButton.setVisibility(View.GONE);
-                holder.deleteButton.setOnClickListener(null);
-                return;
-            }
-
-            holder.deleteButton.setVisibility(View.VISIBLE);
-            holder.deleteButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    int pos = holder.getAdapterPosition();
-                    if (pos == RecyclerView.NO_POSITION) {
-                        return;
-                    }
-
-                    FBRef.refRecipes.document(recipeId).delete()
-                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
-                                    String uid = FBRef.mAuth.getCurrentUser().getUid();
-                                    String savedDocId = buildSavedDocId(uid, recipeId);
-
-                                    // קודם כול — אני מוחקת בוודאות את השמירה שלי
-                                    FBRef.refSavedRecipes.document(savedDocId).delete();
-
-                                    // אחר כך — מנסה למחוק שמירות של אחרים (אם מותר)
-                                    deleteSavedReferencesForRecipe(recipeId);
-
-                                    Toast.makeText(v.getContext(),
-                                            "המתכון נמחק",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(v.getContext(),
-                                            "שגיאה: " + e.getMessage(),
-                                            Toast.LENGTH_LONG).show();
-                                }
-                            });
-                }
-            });
-
-            return;
-        }
-
-        // מצב רגיל: X מוחק מתכון מה-Recipes (רק לבעלים)
         boolean canDelete = showDelete
                 && currentUserID != null
                 && recipe != null
@@ -268,32 +187,61 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
 
         holder.deleteButton.setVisibility(View.VISIBLE);
-        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+        holder.deleteButton.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+
+            FBRef.refRecipes.document(recipeId).delete()
+                    .addOnSuccessListener(aVoid -> {
+                        deleteSavedReferencesForRecipe(recipeId);
+                        Toast.makeText(v.getContext(),
+                                "המתכון נמחק",
+                                Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(v.getContext(),
+                            "שגיאה: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show());
+        });
+    }
+
+    private void bindEditClick(@NonNull RecipeViewHolder holder,
+                               String recipeId,
+                               Recipe recipe) {
+
+        boolean iAmOwner = currentUserID != null
+                && recipe != null
+                && recipe.getUserId() != null
+                && currentUserID.equals(recipe.getUserId())
+                && recipeId != null
+                && !recipeId.isEmpty();
+
+        if (!iAmOwner) {
+            holder.editButton.setVisibility(View.GONE);
+            holder.editButton.setOnClickListener(null);
+            return;
+        }
+
+        holder.editButton.setVisibility(View.VISIBLE);
+        holder.editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int pos = holder.getAdapterPosition();
-                if (pos == RecyclerView.NO_POSITION) {
-                    return;
-                }
+                Intent intent = new Intent(v.getContext(), AddRecipeActivity.class);
+                intent.putExtra("recipeId", recipeId);
+                /*
+                intent.putExtra("title", recipe.getTitle());
+                intent.putExtra("description", recipe.getDescription());
+                intent.putExtra("category", recipe.getCategory());
 
-                FBRef.refRecipes.document(recipeId).delete()
-                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                deleteSavedReferencesForRecipe(recipeId);
-                                Toast.makeText(v.getContext(),
-                                        "המתכון נמחק",
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(v.getContext(),
-                                        "שגיאה: " + e.getMessage(),
-                                        Toast.LENGTH_LONG).show();
-                            }
-                        });
+                List<Integer> imageData = recipe.getImageData();
+                if (imageData != null && !imageData.isEmpty()) {
+                    byte[] imageBytes = new byte[imageData.size()];
+                    for (int i = 0; i < imageData.size(); i++) {
+                        imageBytes[i] = imageData.get(i).byteValue(); // <-- המרה נכונה
+                    }
+                    intent.putExtra("imageData", imageBytes);
+                }
+                 */
+                v.getContext().startActivity(intent);
             }
         });
     }
@@ -306,19 +254,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         FBRef.refSavedRecipes
                 .whereEqualTo("recipeId", recipeId)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot qs) {
-                        FBRef.FBFS.runBatch(new WriteBatch.Function() {
-                            @Override
-                            public void apply(@NonNull WriteBatch batch) {
-                                for (QueryDocumentSnapshot doc : qs) {
-                                    batch.delete(doc.getReference());
-                                }
-                            }
-                        });
+                .addOnSuccessListener(qs -> FBRef.FBFS.runBatch(batch -> {
+                    for (QueryDocumentSnapshot doc : qs) {
+                        batch.delete(doc.getReference());
                     }
-                });
+                }));
     }
 
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
@@ -326,6 +266,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         ImageView image;
         ImageView saveButton;
         ImageView deleteButton;
+        ImageView editButton; // <-- כפתור עריכה
 
         TextView title;
         TextView description;
@@ -338,6 +279,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             image = itemView.findViewById(R.id.image_recipe);
             saveButton = itemView.findViewById(R.id.image_save_recipe);
             deleteButton = itemView.findViewById(R.id.image_delete_recipe);
+            editButton = itemView.findViewById(R.id.image_edit_recipe);
 
             title = itemView.findViewById(R.id.text_recipe_title);
             description = itemView.findViewById(R.id.text_recipe_description);
@@ -345,4 +287,24 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             username = itemView.findViewById(R.id.text_recipe_username);
         }
     }
+
+    // פונקציה לעדכון פריט בודד ב-adapter
+    public void updateRecipeInList(Recipe updatedRecipe) {
+        int position = findRecipePosition(updatedRecipe.getRecipeId()); // חפש את המיקום של המתכון ברשימה
+        if (position != -1) {
+            recipeList.set(position, updatedRecipe); // עדכון המתכון ברשימה
+            notifyItemChanged(position); // עדכון התצוגה
+        }
+    }
+
+    // פונקציה למציאת המיקום של המתכון ברשימה
+    private int findRecipePosition(String recipeId) {
+        for (int i = 0; i < recipeList.size(); i++) {
+            if (recipeList.get(i).getRecipeId().equals(recipeId)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }
