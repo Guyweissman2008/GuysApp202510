@@ -23,15 +23,24 @@
             android:background="#FFE6EB"
             android:padding="8dp" />
 
+
         <TextView
             android:id="@+id/text_email"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
             android:text="user@example.com"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_gravity="center"
-            android:layout_marginTop="12dp"/>
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_edit_profile"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="edit"
+            android:src="@drawable/ic_edit" />
 
         <LinearLayout
             android:id="@+id/layout_buttons"
