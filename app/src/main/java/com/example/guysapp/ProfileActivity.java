@@ -68,12 +68,8 @@ public class ProfileActivity extends BaseActivity {
     protected void onStop() {
         super.onStop();
 
-        // לא להשאיר מאזינים פתוחים כשעוזבים מסך
         removeListener(myRecipesListener);
-        myRecipesListener = null;
-
         removeListener(savedRecipesListener);
-        savedRecipesListener = null;
     }
 
     private void initViews() {
@@ -93,19 +89,8 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void setupListeners() {
-        buttonMyRecipes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showMyRecipes();
-            }
-        });
-
-        buttonSavedRecipes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showSavedRecipes();
-            }
-        });
+        buttonMyRecipes.setOnClickListener(v -> showMyRecipes());
+        buttonSavedRecipes.setOnClickListener(v -> showSavedRecipes());
     }
 
     private void removeListener(ListenerRegistration listener) {
@@ -116,9 +101,7 @@ public class ProfileActivity extends BaseActivity {
 
     private void loadUserProfile() {
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-        if (currentUser == null) {
-            return;
-        }
+        if (currentUser == null) return;
 
         String userId = currentUser.getUid();
 
@@ -129,54 +112,37 @@ public class ProfileActivity extends BaseActivity {
         progressBar.setVisibility(View.VISIBLE);
 
         FBRef.refUsers.document(userId).get()
-                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                    @Override
-                    public void onSuccess(DocumentSnapshot documentSnapshot) {
-                        progressBar.setVisibility(View.GONE);
+                .addOnSuccessListener(documentSnapshot -> {
+                    progressBar.setVisibility(View.GONE);
 
-                        if (!documentSnapshot.exists()) {
-                            return;
-                        }
+                    if (!documentSnapshot.exists()) return;
 
-                        setProfileImageIfExists(documentSnapshot);
-                        setFullName(documentSnapshot);
+                    setProfileImageIfExists(documentSnapshot);
+                    setFullName(documentSnapshot);
 
-                        loadMyRecipesRealtime(userId);
-                        loadSavedRecipesRealtime(userId);
-                        loadSavedRecipeIdsForHearts(userId);
-                    }
+                    loadMyRecipesRealtime(userId);
+                    loadSavedRecipesRealtime(userId);
+                    loadSavedRecipeIdsForHearts(userId);
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(ProfileActivity.this,
-                                "Failed to load profile",
-                                Toast.LENGTH_SHORT).show();
-                    }
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(ProfileActivity.this,
+                            "Failed to load profile",
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
         List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
-        if (imageDataRaw == null || imageDataRaw.isEmpty()) {
-            return;
-        }
+        if (imageDataRaw == null || imageDataRaw.isEmpty()) return;
 
         byte[] bytes = new byte[imageDataRaw.size()];
-
         for (int i = 0; i < imageDataRaw.size(); i++) {
             Object o = imageDataRaw.get(i);
-
             int value;
-            if (o instanceof Long) {
-                value = ((Long) o).intValue();
-            } else if (o instanceof Integer) {
-                value = (Integer) o;
-            } else {
-                value = 0;
-            }
-
+            if (o instanceof Long) value = ((Long) o).intValue();
+            else if (o instanceof Integer) value = (Integer) o;
+            else value = 0;
             bytes[i] = (byte) value;
         }
 
@@ -187,12 +153,8 @@ public class ProfileActivity extends BaseActivity {
     private void setFullName(DocumentSnapshot documentSnapshot) {
         String firstName = documentSnapshot.getString("firstName");
         String lastName = documentSnapshot.getString("lastName");
-
-        String fullName =
-                (firstName != null ? firstName : "") + " " +
-                        (lastName != null ? lastName : "");
-
-        textEmail.setText(fullName.trim());
+        textEmail.setText(((firstName != null ? firstName : "") + " " +
+                (lastName != null ? lastName : "")).trim());
     }
 
     private void loadMyRecipesRealtime(String userId) {
@@ -200,30 +162,19 @@ public class ProfileActivity extends BaseActivity {
 
         myRecipesListener = FBRef.refRecipes
                 .whereEqualTo("userId", userId)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshot,
-                                        @Nullable FirebaseFirestoreException e) {
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null) return;
 
-                        if (e != null || snapshot == null) {
-                            return;
-                        }
+                    myRecipes.clear();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        Recipe recipe = doc.toObject(Recipe.class);
+                        if (recipe == null) continue;
+                        recipe.setRecipeId(doc.getId());
+                        myRecipes.add(recipe);
+                    }
 
-                        myRecipes.clear();
-
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            Recipe recipe = doc.toObject(Recipe.class);
-                            if (recipe == null) {
-                                continue;
-                            }
-
-                            recipe.setRecipeId(doc.getId());
-                            myRecipes.add(recipe);
-                        }
-
-                        if (showingMyRecipes) {
-                            adapter.updateList(myRecipes);
-                        }
+                    if (showingMyRecipes) {
+                        adapter.updateList(myRecipes);
                     }
                 });
     }
@@ -233,94 +184,85 @@ public class ProfileActivity extends BaseActivity {
 
         savedRecipesListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshot,
-                                        @Nullable FirebaseFirestoreException e) {
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null) return;
 
-                        if (e != null || snapshot == null) {
-                            return;
+                    savedRecipes.clear();
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        SavedRecipe saved = doc.toObject(SavedRecipe.class);
+                        if (saved == null) {
+                            cleanInvalidSavedRecipe(doc.getId());
+                            continue;
                         }
 
-                        savedRecipes.clear();
+                        String rid = saved.getRecipeId();
+                        if (rid == null || rid.isEmpty()) continue;
 
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            SavedRecipe saved = doc.toObject(SavedRecipe.class);
-                            if (saved == null) {
-                                cleanInvalidSavedRecipe(doc.getId()); // fix old bug
-                                continue;
-                            }
+                        Recipe recipe = new Recipe();
+                        recipe.setRecipeId(rid);
+                        recipe.setTitle(saved.getTitle());
+                        recipe.setUsername(saved.getAuthorName());
+                        recipe.setUserId(saved.getRecipeOwnerId());
+                        recipe.setImageData(saved.getImageData());
 
-                            String rid = saved.getRecipeId();
-                            if (rid == null || rid.isEmpty()) {
-                                continue;
-                            }
+                        // --- Fetch original recipe to get category ---
+                        FBRef.refRecipes.document(rid).get()
+                                .addOnSuccessListener(originalDoc -> {
+                                    if (originalDoc.exists()) {
+                                        String category = originalDoc.getString("category");
+                                        recipe.setCategory(category);
+                                    }
 
-                            Recipe recipe = new Recipe();
-                            recipe.setRecipeId(rid); // חשוב: זה ה-ID של המתכון המקורי
-                            recipe.setTitle(saved.getTitle());
-                            recipe.setUsername(saved.getAuthorName());
-                            recipe.setUserId(saved.getRecipeOwnerId());
-                            recipe.setImageData(saved.getImageData());
+                                    savedRecipes.add(recipe);
 
-                            savedRecipes.add(recipe);
-                        }
-
-                        if (!showingMyRecipes) {
-                            adapter.updateList(savedRecipes);
-                        }
+                                    if (!showingMyRecipes) {
+                                        adapter.updateList(savedRecipes);
+                                    }
+                                })
+                                .addOnFailureListener(err -> {
+                                    // אם נכשל, פשוט מוסיפים בלי category
+                                    savedRecipes.add(recipe);
+                                    if (!showingMyRecipes) {
+                                        adapter.updateList(savedRecipes);
+                                    }
+                                });
                     }
                 });
     }
 
-    // כדי שהלב במסך פרופיל יוצג נכון גם ברשימת "שמורים"
     private void loadSavedRecipeIdsForHearts(String userId) {
         FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshots,
-                                        @Nullable FirebaseFirestoreException e) {
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
 
-                        if (e != null || snapshots == null) {
-                            return;
+                    Set<String> ids = new HashSet<>();
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        SavedRecipe saved = doc.toObject(SavedRecipe.class);
+                        if (saved != null && saved.getRecipeId() != null) {
+                            ids.add(saved.getRecipeId());
                         }
-
-                        Set<String> ids = new HashSet<>();
-
-                        for (QueryDocumentSnapshot doc : snapshots) {
-                            SavedRecipe saved = doc.toObject(SavedRecipe.class);
-                            if (saved != null && saved.getRecipeId() != null) {
-                                ids.add(saved.getRecipeId());
-                            }
-                        }
-
-                        adapter.setSavedIds(ids);
                     }
+                    adapter.setSavedIds(ids);
                 });
     }
 
     private void showMyRecipes() {
         showingMyRecipes = true;
-
         adapter.setSavedScreen(false);
         adapter.setShowDelete(true);
-
         adapter.updateList(myRecipes);
     }
 
     private void showSavedRecipes() {
         showingMyRecipes = false;
-
-        adapter.setSavedScreen(true);   // אנחנו במסך שמורים
-        adapter.setShowDelete(true);    // מאפשר X רק אם אני owner
-
+        adapter.setSavedScreen(true);
+        adapter.setShowDelete(true);
         adapter.updateList(savedRecipes);
     }
 
     private void cleanInvalidSavedRecipe(String savedDocId) {
-        FBRef.refSavedRecipes
-                .document(savedDocId)
-                .delete();
+        FBRef.refSavedRecipes.document(savedDocId).delete();
     }
 }
