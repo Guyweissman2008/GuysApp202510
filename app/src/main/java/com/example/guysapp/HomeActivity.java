@@ -167,20 +167,19 @@ public class HomeActivity extends BaseActivity {
     private void filterRecipes(String query) {
         filteredRecipes.clear();
 
-        if (query == null) {
-            query = "";
-        }
+        // מנקים את מה שהמשתמש הקליד
+        String cleanQuery = cleanString(query);
 
-        String q = query.trim().toLowerCase();
-
-        if (q.isEmpty()) {
+        if (cleanQuery.isEmpty()) {
             filteredRecipes.addAll(allRecipes);
         } else {
             for (Recipe recipe : allRecipes) {
-                String title = recipe.getTitle() != null ? recipe.getTitle().toLowerCase() : "";
-                String category = recipe.getCategory() != null ? recipe.getCategory().toLowerCase() : "";
+                // מנקים גם את שם המתכון ואת הקטגוריה מאותו "זבל" אפשרי
+                String cleanTitle = cleanString(recipe.getTitle());
+                String cleanCategory = cleanString(recipe.getCategory());
 
-                if (title.contains(q) || category.contains(q)) {
+                // עכשיו משווים "נקי" מול "נקי"
+                if (cleanTitle.contains(cleanQuery) || cleanCategory.contains(cleanQuery)) {
                     filteredRecipes.add(recipe);
                 }
             }
@@ -188,6 +187,22 @@ public class HomeActivity extends BaseActivity {
 
         sortFilteredRecipes();
         adapter.updateList(filteredRecipes);
+    }
+    // פונקציה לניקוי יסודי של הטקסט לפני השוואה
+    private String cleanString(String input) {
+        if (input == null) return "";
+
+        // 1. הסרת ניקוד עברי (טווח היוניקוד של הניקוד)
+        String noNikkud = input.replaceAll("[\u0591-\u05C7]", "");
+
+        // 2. החלפת "רווח קשיח" (Non-breaking space) ברווח רגיל
+        String normalSpaces = noNikkud.replace("\u00A0", " ");
+
+        // 3. הסרת תווי כיוון נסתרים (RTL/LTR marks) שיש בוואטסאפ/אינטרנט
+        String noDirectionChars = normalSpaces.replaceAll("[\u200E\u200F]", "");
+
+        // 4. המרה לאותיות קטנות + הסרת רווחים מיותרים בצדדים
+        return noDirectionChars.trim().toLowerCase();
     }
 
     // מאזין לרשימת המתכונים השמורים של המשתמש (כדי להציג לב מלא/ריק)

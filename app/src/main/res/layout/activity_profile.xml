@@ -22,6 +22,15 @@
             android:clipToOutline="true"
             android:background="#FFE6EB"
             android:padding="8dp" />
+        <ImageView
+            android:id="@+id/button_edit_profile"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignTop="@id/image_recipe"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="6dp"
+            android:layout_toEndOf="@id/image_delete_recipe"
+            android:src="@drawable/ic_edit" />
 
         <TextView
             android:id="@+id/text_email"
