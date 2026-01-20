@@ -36,7 +36,8 @@ public class HomeActivity extends BaseActivity {
     // כל המתכונים מהמסד + רשימה מסוננת לחיפוש
     private List<Recipe> allRecipes;
     private List<Recipe> filteredRecipes;
-
+    private com.google.android.material.chip.ChipGroup chipGroup;
+    private String selectedCategory = "הכל"; // קטגוריית ברירת מחדל
     private EditText searchEditText;
     private FrameLayout progressOverlay;
 
@@ -84,6 +85,7 @@ public class HomeActivity extends BaseActivity {
         recyclerView = findViewById(R.id.recyclerView_recipes);
         searchEditText = findViewById(R.id.editText_search);
         progressOverlay = findViewById(R.id.progress_overlay);
+        setupCategoryChips();
     }
 
     private void setupRecyclerView() {
@@ -281,5 +283,45 @@ public class HomeActivity extends BaseActivity {
         return s == null ? "" : s.trim().toLowerCase();
     }
     // מיון end
+    private void setupCategoryChips() {
+        chipGroup = findViewById(R.id.categories_chip_group);
+        chipGroup.removeAllViews();
 
+        // 1. יצירת רשימה דינמית
+        java.util.List<String> categoryList = new java.util.ArrayList<>();
+
+        // קודם כל מוסיפים את "הכל" (שלא קיים ב-XML, כי הוא רק לסינון)
+        categoryList.add("הכל");
+
+        // עכשיו מושכים את הקטגוריות האמיתיות מה-XML (אותו מקור כמו ב-AddRecipeActivity)
+        String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
+        for (String cat : resourceCategories) {
+            categoryList.add(cat);
+        }
+
+        // 2. יצירת הצ'יפים בלולאה
+        for (String cat : categoryList) {
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
+            chip.setText(cat);
+            chip.setCheckable(true);
+
+            // עיצוב
+            chip.setChipBackgroundColorResource(android.R.color.white);
+            chip.setChipStrokeColorResource(android.R.color.darker_gray);
+            chip.setChipStrokeWidth(1f);
+
+            chip.setOnClickListener(v -> {
+                selectedCategory = cat;
+                String currentSearchText = searchEditText.getText().toString();
+                filterRecipes(currentSearchText);
+            });
+
+            chipGroup.addView(chip);
+        }
+
+        // סימון "הכל" כברירת מחדל
+        if (chipGroup.getChildCount() > 0) {
+            ((com.google.android.material.chip.Chip) chipGroup.getChildAt(0)).setChecked(true);
+        }
+    }
 }

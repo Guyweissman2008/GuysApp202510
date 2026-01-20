@@ -82,6 +82,29 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         bindSaveClick(holder, recipe, recipeId, displayAuthor);
         bindDeleteClick(holder, recipeId, recipe);
         bindEditClick(holder, recipeId, recipe);
+
+        holder.buttonShare.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //הטקסט שאני כותבת
+                String shareBody = "היי! מצאתי מתכון מעולה \n\n" +
+                        "שם המתכון: " + recipe.getTitle() + "\n" +
+                        "קטגוריה: " + recipe.getCategory() + "\n\n" +
+                        "מומלץ לנסות!";
+
+            //יוצרת אינטנט
+                Intent sendIntent = new Intent();
+                sendIntent.setAction(Intent.ACTION_SEND);
+                sendIntent.putExtra(Intent.EXTRA_TEXT, shareBody);
+                sendIntent.setType("text/plain");
+
+            //פתיחת שיתוף
+                Intent shareIntent = Intent.createChooser(sendIntent, "שתף מתכון דרך...");
+
+                // צריך Context כדי לפתוח מסך חדש, אנחנו לוקחים אותו מהכפתור עצמו,להשיג גישה ולבצע את פעולת השיתוף.
+                v.getContext().startActivity(shareIntent);
+            }
+        });
     }
 
     @Override
@@ -267,7 +290,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         ImageView saveButton;
         ImageView deleteButton;
         ImageView editButton; // <-- כפתור עריכה
-
+        ImageView buttonShare;
         TextView title;
         TextView description;
         TextView category;
@@ -280,7 +303,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             saveButton = itemView.findViewById(R.id.image_save_recipe);
             deleteButton = itemView.findViewById(R.id.image_delete_recipe);
             editButton = itemView.findViewById(R.id.image_edit_recipe);
-
+            buttonShare = itemView.findViewById(R.id.button_share);
             title = itemView.findViewById(R.id.text_recipe_title);
             description = itemView.findViewById(R.id.text_recipe_description);
             category = itemView.findViewById(R.id.text_recipe_category);
