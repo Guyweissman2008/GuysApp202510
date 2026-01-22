@@ -70,19 +70,24 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
         Recipe recipe = recipeList.get(position);
         String recipeId = recipe.getRecipeId();
-
         holder.title.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
         holder.description.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
         holder.category.setText("קטגוריה: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
         String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "משתמש אנונימי";
         holder.username.setText("הועלה על ידי: " + displayAuthor);
-
+        TextView textPrepTime;
         bindImage(holder, recipe);
         bindSaveState(holder, recipeId);
         bindSaveClick(holder, recipe, recipeId, displayAuthor);
         bindDeleteClick(holder, recipeId, recipe);
         bindEditClick(holder, recipeId, recipe);
-
+        if (recipe.getPreparationTime() != null && !recipe.getPreparationTime().isEmpty()) {
+            holder.textPrepTime.setText(recipe.getPreparationTime() + " דקות");
+            holder.textPrepTime.setVisibility(View.VISIBLE);
+        } else {
+            // למתכונים ישנים שאין להם זמן - נסתיר את השורה
+            holder.textPrepTime.setVisibility(View.GONE);
+        }
         holder.buttonShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -285,7 +290,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
-
+        TextView textPrepTime;
         ImageView image;
         ImageView saveButton;
         ImageView deleteButton;
@@ -308,6 +313,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             description = itemView.findViewById(R.id.text_recipe_description);
             category = itemView.findViewById(R.id.text_recipe_category);
             username = itemView.findViewById(R.id.text_recipe_username);
+            textPrepTime = itemView.findViewById(R.id.text_prep_time);
         }
     }
 

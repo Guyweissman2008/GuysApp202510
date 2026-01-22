@@ -167,26 +167,38 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void filterRecipes(String query) {
-        filteredRecipes.clear();
+        String q = (query != null) ? query.toLowerCase().trim() : "";
+        List<Recipe> tempList = new ArrayList<>();
 
-        // מנקים את מה שהמשתמש הקליד
-        String cleanQuery = cleanString(query);
+        // האם נבחרה קטגוריית "הכל"?
+        boolean isAllCategories = selectedCategory.equals("הכל");
 
-        if (cleanQuery.isEmpty()) {
-            filteredRecipes.addAll(allRecipes);
-        } else {
-            for (Recipe recipe : allRecipes) {
-                // מנקים גם את שם המתכון ואת הקטגוריה מאותו "זבל" אפשרי
-                String cleanTitle = cleanString(recipe.getTitle());
-                String cleanCategory = cleanString(recipe.getCategory());
+        for (Recipe recipe : allRecipes) {
+            // הבאת הנתונים מהמתכון
+            String title = (recipe.getTitle() != null) ? recipe.getTitle().toLowerCase() : "";
 
-                // עכשיו משווים "נקי" מול "נקי"
-                if (cleanTitle.contains(cleanQuery) || cleanCategory.contains(cleanQuery)) {
-                    filteredRecipes.add(recipe);
-                }
+            // שליפת הקטגוריה מהמתכון (אם אין, שמים מחרוזת ריקה)
+            String recCategory = (recipe.getCategory() != null) ? recipe.getCategory() : "";
+
+            // --- בדיקה 1: האם הטקסט בחיפוש תואם? ---
+            boolean matchesSearch = q.isEmpty() || title.contains(q);
+
+            // --- בדיקה 2: האם הקטגוריה תואמת? ---
+            // אנחנו משתמשים ב-equalsIgnoreCase כדי ש"חלבי" יהיה שווה ל"חלבי" וגם ל"HLAVI"
+            // וגם ב-trim() כדי למחוק רווחים מיותרים
+            boolean matchesCategory = isAllCategories ||
+                    recCategory.trim().equalsIgnoreCase(selectedCategory.trim());
+
+            // הדפסה לדיבוג - תראי את זה ב-Logcat אם זה לא עובד
+            // android.util.Log.d("FILTER_DEBUG", "Checking: " + title + " | Cat: " + recCategory + " vs Selected: " + selectedCategory + " -> " + matchesCategory);
+
+            if (matchesSearch && matchesCategory) {
+                tempList.add(recipe);
             }
         }
 
+        filteredRecipes.clear();
+        filteredRecipes.addAll(tempList);
         sortFilteredRecipes();
         adapter.updateList(filteredRecipes);
     }
@@ -287,31 +299,43 @@ public class HomeActivity extends BaseActivity {
         chipGroup = findViewById(R.id.categories_chip_group);
         chipGroup.removeAllViews();
 
-        // 1. יצירת רשימה דינמית
+        // 1. רשימת הקטגוריות (מתחילה ב"הכל")
         java.util.List<String> categoryList = new java.util.ArrayList<>();
+        categoryList.add("הכל"); // קטגוריית ברירת המחדל
 
-        // קודם כל מוסיפים את "הכל" (שלא קיים ב-XML, כי הוא רק לסינון)
-        categoryList.add("הכל");
-
-        // עכשיו מושכים את הקטגוריות האמיתיות מה-XML (אותו מקור כמו ב-AddRecipeActivity)
+        // טעינת הקטגוריות מהקובץ strings.xml
         String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
         for (String cat : resourceCategories) {
             categoryList.add(cat);
         }
 
-        // 2. יצירת הצ'יפים בלולאה
+        // 2. יצירת הכפתורים
         for (String cat : categoryList) {
             com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
             chip.setText(cat);
             chip.setCheckable(true);
+            chip.setClickable(true);
 
             // עיצוב
             chip.setChipBackgroundColorResource(android.R.color.white);
             chip.setChipStrokeColorResource(android.R.color.darker_gray);
             chip.setChipStrokeWidth(1f);
 
+            // מאזין ללחיצה
             chip.setOnClickListener(v -> {
-                selectedCategory = cat;
+                // בדיקה האם הכפתור סומן עכשיו או בוטל
+                boolean isChecked = chip.isChecked();
+
+                if (isChecked) {
+                    selectedCategory = cat; // אם סומן - נשמור את הקטגוריה
+                } else {
+                    selectedCategory = "הכל"; // אם בוטל הסימון - נחזור ל"הכל"
+                }
+
+                // הדפסה לבדיקה (חפשי ב-Logcat את המילה CHIP_CHECK)
+                android.util.Log.d("CHIP_CHECK", "Selected Category: " + selectedCategory);
+
+                // הפעלת הסינון מחדש
                 String currentSearchText = searchEditText.getText().toString();
                 filterRecipes(currentSearchText);
             });
@@ -319,9 +343,10 @@ public class HomeActivity extends BaseActivity {
             chipGroup.addView(chip);
         }
 
-        // סימון "הכל" כברירת מחדל
+        // סימון ברירת מחדל של הכפתור הראשון ("הכל")
         if (chipGroup.getChildCount() > 0) {
             ((com.google.android.material.chip.Chip) chipGroup.getChildAt(0)).setChecked(true);
+            selectedCategory = "הכל";
         }
     }
 }

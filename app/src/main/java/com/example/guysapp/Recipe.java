@@ -11,7 +11,7 @@ public class Recipe {
     private List<Integer> imageData;
     private String username;
     private String userId;
-
+    private String preparationTime;
     // חובה ל-Firestore
     public Recipe() { }
 
@@ -21,7 +21,7 @@ public class Recipe {
                   List<Integer> imageData,
                   String category,
                   String username,
-                  String userId) {
+                  String userId,String preparationTime) {
 
         this.recipeId = recipeId;
         this.title = title;
@@ -30,6 +30,8 @@ public class Recipe {
         this.category = category;
         this.username = username;
         this.userId = userId;
+        this.preparationTime = preparationTime;
+
     }
 
     public String getRecipeId() {
@@ -102,5 +104,12 @@ public class Recipe {
         }
 
         return bytes;
+    }
+    public String getPreparationTime() {
+        return preparationTime;
+    }
+
+    public void setPreparationTime(String preparationTime) {
+        this.preparationTime = preparationTime;
     }
 }

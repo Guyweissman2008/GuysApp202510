@@ -5,99 +5,136 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    card_view:cardCornerRadius="8dp"
+    card_view:cardCornerRadius="12dp"
     card_view:cardElevation="4dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- תמונה -->
         <ImageView
             android:id="@+id/image_recipe"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="220dp"
             android:scaleType="centerCrop"
-            android:src="@mipmap/ic_launcher_round"/>
+            android:src="@mipmap/ic_launcher_round" />
 
-        <!-- כפתור שמירה -->
         <ImageView
             android:id="@+id/image_save_recipe"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignParentEnd="true"
-            android:layout_margin="8dp"
-            android:layout_alignTop="@id/image_recipe"
+            android:layout_margin="12dp"
+            android:padding="6dp"
             android:src="@drawable/ic_favorite_border"/>
 
-        <!-- כפתור מחיקה – רק בפרופיל -->
-        <!-- כפתור עריכה – רק לבעלים -->
         <ImageView
             android:id="@+id/image_delete_recipe"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_alignTop="@id/image_recipe"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignParentStart="true"
-            android:layout_margin="8dp"
-            android:layout_marginStart="42dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_margin="12dp"
+
+            android:padding="8dp"
             android:src="@drawable/ic_delete" />
 
         <ImageView
             android:id="@+id/image_edit_recipe"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_alignTop="@id/image_recipe"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="6dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_toEndOf="@id/image_delete_recipe"
+            android:layout_alignTop="@id/image_delete_recipe"
+            android:layout_marginStart="8dp"
+
+            android:padding="8dp"
             android:src="@drawable/ic_edit" />
 
         <ImageView
             android:id="@+id/button_share"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_alignBottom="@+id/image_recipe"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="10dp"
-            android:layout_marginBottom="160dp"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="12dp"
+
+            android:padding="8dp"
             android:src="@android:drawable/ic_menu_share" />
+
 
         <LinearLayout
             android:layout_below="@id/image_recipe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/text_recipe_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#000000"
+                android:text="שם המתכון"/>
 
             <TextView
                 android:id="@+id/text_recipe_username"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="14sp"
-                android:textStyle="italic"
-                android:textColor="#555555"/>
+                android:textColor="#666666"
+                android:layout_marginTop="2dp"
+                android:text="מאת: שם משתמש"/>
 
-            <TextView
-                android:id="@+id/text_recipe_title"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:textStyle="bold"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/text_recipe_category"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="קטגוריה"
+                    android:textStyle="bold"
+                    android:textColor="#FF5C8D"
+                    android:textSize="14sp"/>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="16dp"
+                    android:background="#CCCCCC"
+                    android:layout_marginHorizontal="12dp"/>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    android:tint="#888888" />
+
+                <TextView
+                    android:id="@+id/text_prep_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="45 דקות"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="6dp"/>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/text_recipe_description"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <TextView
-                android:id="@+id/text_recipe_category"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textStyle="italic"
-                android:textColor="#555555"/>
+                android:layout_marginTop="8dp"
+                android:ellipsize="end"
+                android:textSize="14sp"
+                android:textColor="#444444"
+                android:text="תיאור קצר של המתכון מופיע כאן..."/>
+
         </LinearLayout>
 
     </RelativeLayout>

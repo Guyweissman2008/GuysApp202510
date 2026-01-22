@@ -51,7 +51,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"/>
-
+            <EditText
+                android:id="@+id/edit_prep_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="זמן הכנה (בדקות)"
+                android:inputType="number"
+                android:layout_marginTop="8dp"
+                android:background="@android:drawable/edit_text"
+                android:padding="12dp"/>
             <ImageView
                 android:id="@+id/image_recipe"
                 android:layout_width="match_parent"

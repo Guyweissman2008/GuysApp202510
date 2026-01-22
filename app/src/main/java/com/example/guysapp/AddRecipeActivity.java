@@ -46,7 +46,7 @@ public class AddRecipeActivity extends BaseActivity {
     private Spinner spinnerCategory;
     private Button buttonAdd, buttonCamera, buttonGallery;
     private ImageButton buttonBackHome;
-
+    private EditText editPrepTime;
     // Image state
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
@@ -123,6 +123,7 @@ public class AddRecipeActivity extends BaseActivity {
         buttonCamera = findViewById(R.id.button_camera);
         buttonGallery = findViewById(R.id.button_gallery);
         buttonBackHome = findViewById(R.id.btnBack);
+        editPrepTime = findViewById(R.id.edit_prep_time);
     }
 
     private void setupCategorySpinner() {
@@ -271,6 +272,7 @@ public class AddRecipeActivity extends BaseActivity {
             return;
         }
 
+
         List<Integer> imageDataList = processSelectedImage(selectedBitmap);
         if (imageDataList == null) {
             buttonAdd.setEnabled(true);
@@ -282,7 +284,12 @@ public class AddRecipeActivity extends BaseActivity {
             buttonAdd.setEnabled(true);
             return;
         }
+        String prepTime = editPrepTime.getText().toString().trim();
 
+        if (title.isEmpty() || description.isEmpty() || selectedCategory.isEmpty() || prepTime.isEmpty()) {
+            Toast.makeText(this, "יש למלא את כל השדות (כולל זמן)", Toast.LENGTH_SHORT).show();
+            return;
+        }
         String userId = FBRef.mAuth.getCurrentUser().getUid();
 
         FBRef.refUsers.document(userId).get()
@@ -295,9 +302,9 @@ public class AddRecipeActivity extends BaseActivity {
 
                         String recipeId = AddRecipeActivity.this.getIntent().getStringExtra("recipeId");
                         if (recipeId == null || recipeId.isEmpty()) {
-                            AddRecipeActivity.this.addNewRecipe(title, description, imageDataList, selectedCategory, userId, username);
+                            AddRecipeActivity.this.addNewRecipe(title, description, imageDataList, selectedCategory, userId, username,prepTime);
                         } else {
-                            AddRecipeActivity.this.updateRecipe(recipeId, title, description, imageDataList, selectedCategory, userId, username);
+                            AddRecipeActivity.this.updateRecipe(recipeId, title, description, imageDataList, selectedCategory, userId, username,prepTime);
                         }
                     }
                 })
@@ -311,9 +318,10 @@ public class AddRecipeActivity extends BaseActivity {
     }
 
     private void addNewRecipe(String title, String description, List<Integer> imageDataList,
-                              String category, String userId, String username) {
+                              String category, String userId, String username,String prepTime) {
+
         String docId = FBRef.refRecipes.document().getId();
-        Recipe recipe = new Recipe(docId, title, description, imageDataList, category, username, userId);
+        Recipe recipe = new Recipe(docId, title, description, imageDataList, category, username, userId,prepTime);
 
         FBRef.refRecipes.document(docId)
                 .set(recipe)
@@ -335,14 +343,15 @@ public class AddRecipeActivity extends BaseActivity {
     }
 
     private void updateRecipe(String recipeId, String title, String description,
-                              List<Integer> imageDataList, String category, String userId, String username) {
+                              List<Integer> imageDataList, String category, String userId, String username,String prepTime) {
 
         FBRef.refRecipes.document(recipeId)
                 .update(
                         "title", title,
                         "description", description,
                         "category", category,
-                        "imageData", imageDataList
+                        "imageData", imageDataList,
+                        "preparationTime", prepTime
                 )
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -351,7 +360,7 @@ public class AddRecipeActivity extends BaseActivity {
                         Toast.makeText(AddRecipeActivity.this, "המתכון עודכן!", Toast.LENGTH_SHORT).show();
 
                         // יצירת המתכון המעודכן
-                        Recipe updatedRecipe = new Recipe(recipeId, title, description, imageDataList, category, username, userId);
+                        Recipe updatedRecipe = new Recipe(recipeId, title, description, imageDataList, category, username, userId,prepTime);
 
                         // עדכון ה-RecyclerView
                         RecipeAdapter adapter = getRecipeAdapter(); // קבל את ה-Adapter
@@ -384,6 +393,7 @@ public class AddRecipeActivity extends BaseActivity {
     // ===== Load recipe for editing =====
     private void loadRecipeForEditing(String recipeId) {
         FBRef.refRecipes.document(recipeId).get()
+
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot document) {
@@ -406,7 +416,9 @@ public class AddRecipeActivity extends BaseActivity {
                             imageRecipe.setImageBitmap(bitmap);
                             selectedBitmap = bitmap;
                         }
-
+                        if (recipe.getPreparationTime() != null) {
+                            editPrepTime.setText(recipe.getPreparationTime());
+                        }
                         buttonAdd.setText("עדכן מתכון");
                     }
                 });
