@@ -2,6 +2,7 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
@@ -26,6 +27,8 @@
             android:layout_alignParentEnd="true"
             android:layout_margin="12dp"
             android:padding="6dp"
+            android:background="#99FFFFFF"
+            app:tint="#000000"
             android:src="@drawable/ic_favorite_border"/>
 
         <ImageView
@@ -34,8 +37,9 @@
             android:layout_height="40dp"
             android:layout_alignParentStart="true"
             android:layout_margin="12dp"
-
             android:padding="8dp"
+            android:background="#99FFFFFF"
+            app:tint="#000000"
             android:src="@drawable/ic_delete" />
 
         <ImageView
@@ -45,8 +49,9 @@
             android:layout_toEndOf="@id/image_delete_recipe"
             android:layout_alignTop="@id/image_delete_recipe"
             android:layout_marginStart="8dp"
-
             android:padding="8dp"
+            android:background="#99FFFFFF"
+            app:tint="#000000"
             android:src="@drawable/ic_edit" />
 
         <ImageView
@@ -56,10 +61,10 @@
             android:layout_alignBottom="@+id/image_recipe"
             android:layout_alignParentEnd="true"
             android:layout_margin="12dp"
-
             android:padding="8dp"
+            android:background="#99FFFFFF"
+            app:tint="#000000"
             android:src="@android:drawable/ic_menu_share" />
-
 
         <LinearLayout
             android:layout_below="@id/image_recipe"
@@ -112,7 +117,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_recent_history"
-                    android:tint="#888888" />
+                    app:tint="#888888" />
 
                 <TextView
                     android:id="@+id/text_prep_time"

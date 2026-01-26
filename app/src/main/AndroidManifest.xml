@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -20,10 +20,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GuysApp"
         tools:targetApi="31">
-        <activity
-            android:name=".EditProfileActivity"
-            android:exported="false" />
-        <!-- Add the exported attribute to your activities -->
         <activity
             android:name=".AddRecipeActivity"
             android:exported="true" />

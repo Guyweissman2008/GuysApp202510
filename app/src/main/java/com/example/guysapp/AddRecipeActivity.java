@@ -99,12 +99,10 @@ public class AddRecipeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
-
         setupBottomNavigation(R.id.nav_add);
         initViews();
         setupCategorySpinner();
         setupClickListeners();
-
         String recipeId = getIntent().getStringExtra("recipeId");
         if (recipeId != null && !recipeId.isEmpty()) {
             loadRecipeForEditing(recipeId);
@@ -156,6 +154,7 @@ public class AddRecipeActivity extends BaseActivity {
                         new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 );
             }
+
         });
 
         buttonCamera.setOnClickListener(new View.OnClickListener() {
@@ -175,7 +174,9 @@ public class AddRecipeActivity extends BaseActivity {
         buttonBackHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AddRecipeActivity.this.finish();
+                Intent intent = new Intent(AddRecipeActivity.this, HomeActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
     }

@@ -8,11 +8,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
-
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import android.os.Handler;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -32,8 +33,6 @@ public class HomeActivity extends BaseActivity {
     private FloatingActionButton addRecipeButton;
     private RecyclerView recyclerView;
     private RecipeAdapter adapter;
-
-    // כל המתכונים מהמסד + רשימה מסוננת לחיפוש
     private List<Recipe> allRecipes;
     private List<Recipe> filteredRecipes;
     private com.google.android.material.chip.ChipGroup chipGroup;
@@ -51,12 +50,77 @@ public class HomeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
         initLists();
         setupBottomNavigation(R.id.nav_home);
         initViews();
         setupRecyclerView();
         setupListeners();
+        setupBottomNavigation(R.id.nav_home);
+
+
+        // 4. === כפתור הטיימר (עם התיקון הסופי) ===
+        FloatingActionButton btnTimer = findViewById(R.id.btn_kitchen_timer);
+
+        if (btnTimer != null) {
+            btnTimer.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // רשימת האפשרויות
+                    final CharSequence[] options = {"10 שניות (לבדיקה)", "5 דקות", "15 דקות", "30 דקות", "שעה"};
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+                    builder.setTitle("מתי להזכיר לך?");
+                    builder.setItems(options, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            long durationInMillis = 0;
+                            String tempTimeText = "";
+
+                            switch (which) {
+                                case 0: // 10 שניות
+                                    durationInMillis = 10000;
+                                    tempTimeText = "10 שניות";
+                                    break;
+                                case 1: // 5 דקות
+                                    durationInMillis = 5 * 60 * 1000;
+                                    tempTimeText = "5 דקות";
+                                    break;
+                                case 2: // 15 דקות
+                                    durationInMillis = 15 * 60 * 1000;
+                                    tempTimeText = "15 דקות";
+                                    break;
+                                case 3: // 30 דקות
+                                    durationInMillis = 30 * 60 * 1000;
+                                    tempTimeText = "30 דקות";
+                                    break;
+                                case 4: // שעה
+                                    durationInMillis = 60 * 60 * 1000;
+                                    tempTimeText = "שעה אחת";
+                                    break;
+                            }
+
+                            // === התיקון: משתנה final לשימוש בתוך ה-Handler ===
+                            final String finalTimeText = tempTimeText;
+
+                            Toast.makeText(HomeActivity.this, "⏰ טיימר הופעל ל-" + finalTimeText, Toast.LENGTH_SHORT).show();
+
+                            // הפעלת הטיימר
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    NotificationHelper.showNotification(
+                                            HomeActivity.this,
+                                            "האוכל מוכן! 🍲",
+                                            "הזמן עבר (" + finalTimeText + "), בוא לבדוק את המתכון."
+                                    );
+                                }
+                            }, durationInMillis);
+                        }
+                    });
+                    builder.show();
+                }
+            });
+        }
     }
 
     @Override
@@ -86,6 +150,7 @@ public class HomeActivity extends BaseActivity {
         searchEditText = findViewById(R.id.editText_search);
         progressOverlay = findViewById(R.id.progress_overlay);
         setupCategoryChips();
+
     }
 
     private void setupRecyclerView() {
