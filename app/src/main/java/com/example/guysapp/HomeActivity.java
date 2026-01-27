@@ -1,5 +1,4 @@
 package com.example.guysapp;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -20,7 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-
+import android.text.InputType;  // <--- חשוב למקלדת מספרים
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,10 +38,7 @@ public class HomeActivity extends BaseActivity {
     private String selectedCategory = "הכל"; // קטגוריית ברירת מחדל
     private EditText searchEditText;
     private FrameLayout progressOverlay;
-
-    // IDs של מתכונים שנשמרו ע"י המשתמש (ללב מלא/ריק)
     private Set<String> savedRecipeIds;
-
     private ListenerRegistration recipesReg;
     private ListenerRegistration savedReg;
 
@@ -59,50 +55,48 @@ public class HomeActivity extends BaseActivity {
 
 
         // 4. === כפתור הטיימר (עם התיקון הסופי) ===
+        // === כפתור הטיימר: גרסה עם קלט ידני ===
         FloatingActionButton btnTimer = findViewById(R.id.btn_kitchen_timer);
 
         if (btnTimer != null) {
             btnTimer.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // רשימת האפשרויות
-                    final CharSequence[] options = {"10 שניות (לבדיקה)", "5 דקות", "15 דקות", "30 דקות", "שעה"};
+                    // 1. יצירת שדה כתיבה
+                    final EditText input = new EditText(HomeActivity.this);
+                    input.setHint("לדוגמה: 20");
+                    input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
 
+                    // 2. בניית הדיאלוג
                     AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
-                    builder.setTitle("מתי להזכיר לך?");
-                    builder.setItems(options, new DialogInterface.OnClickListener() {
+                    builder.setTitle("כמה דקות לשים בטיימר?");
+                    builder.setView(input);
+
+                    // 3. כפתור אישור
+                    builder.setPositiveButton("הפעל", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            long durationInMillis = 0;
-                            String tempTimeText = "";
+                            String minutesStr = input.getText().toString();
 
-                            switch (which) {
-                                case 0: // 10 שניות
-                                    durationInMillis = 10000;
-                                    tempTimeText = "10 שניות";
-                                    break;
-                                case 1: // 5 דקות
-                                    durationInMillis = 5 * 60 * 1000;
-                                    tempTimeText = "5 דקות";
-                                    break;
-                                case 2: // 15 דקות
-                                    durationInMillis = 15 * 60 * 1000;
-                                    tempTimeText = "15 דקות";
-                                    break;
-                                case 3: // 30 דקות
-                                    durationInMillis = 30 * 60 * 1000;
-                                    tempTimeText = "30 דקות";
-                                    break;
-                                case 4: // שעה
-                                    durationInMillis = 60 * 60 * 1000;
-                                    tempTimeText = "שעה אחת";
-                                    break;
+                            if (minutesStr.isEmpty()) {
+                                Toast.makeText(HomeActivity.this, "לא הכנסת זמן!", Toast.LENGTH_SHORT).show();
+                                return;
                             }
 
-                            // === התיקון: משתנה final לשימוש בתוך ה-Handler ===
-                            final String finalTimeText = tempTimeText;
+                            int minutes = Integer.parseInt(minutesStr);
 
-                            Toast.makeText(HomeActivity.this, "⏰ טיימר הופעל ל-" + finalTimeText, Toast.LENGTH_SHORT).show();
+                            // חישוב הזמן (דקות * 60 שניות * 1000)
+                            long durationInMillis = minutes * 60 * 1000;
+
+                            // קוד סודי לבוחן: 999 מפעיל טיימר של 10 שניות לבדיקה
+                            if (minutes == 999) {
+                                durationInMillis = 10000;
+                                Toast.makeText(HomeActivity.this, "מצב בדיקה: 10 שניות", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(HomeActivity.this, "⏰ טיימר הופעל ל-" + minutes + " דקות", Toast.LENGTH_SHORT).show();
+                            }
+
+                            final String timeText = minutes + " דקות";
 
                             // הפעלת הטיימר
                             new Handler().postDelayed(new Runnable() {
@@ -111,12 +105,21 @@ public class HomeActivity extends BaseActivity {
                                     NotificationHelper.showNotification(
                                             HomeActivity.this,
                                             "האוכל מוכן! 🍲",
-                                            "הזמן עבר (" + finalTimeText + "), בוא לבדוק את המתכון."
+                                            "עברו " + timeText + ", בוא לבדוק את המתכון."
                                     );
                                 }
                             }, durationInMillis);
                         }
                     });
+
+                    // 4. כפתור ביטול
+                    builder.setNegativeButton("ביטול", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+
                     builder.show();
                 }
             });
