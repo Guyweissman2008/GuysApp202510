@@ -304,15 +304,18 @@ public class RegisterActivity extends AppCompatActivity {
 
                             FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
                             if (currentUser != null) {
-                                Task<Void> voidTask = currentUser.delete()
-                                        .addOnCompleteListener(deleteTask -> {
-                                            if (!deleteTask.isSuccessful() && deleteTask.getException() != null) {
-                                                Toast.makeText(RegisterActivity.this,
-                                                        "Failed to delete user after error: " + deleteTask.getException().getMessage(),
-                                                        Toast.LENGTH_LONG).show();
-                                            }
-                                        });
+                                currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> deleteTask) {
+                                        if (!deleteTask.isSuccessful() && deleteTask.getException() != null) {
+                                            Toast.makeText(RegisterActivity.this,
+                                                    "Failed to delete user after error: " + deleteTask.getException().getMessage(),
+                                                    Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                });
                             }
+
                         }
                     }
                 });
