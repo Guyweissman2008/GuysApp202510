@@ -50,6 +50,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
+                finish();
             }
         });
     }
@@ -75,8 +76,6 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
 
-                        setButtonsEnabled(true);
-
                         if (task.isSuccessful()) {
                             Toast.makeText(LoginActivity.this,
                                     "Authentication Successful",
@@ -85,13 +84,15 @@ public class LoginActivity extends AppCompatActivity {
                             startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                             finish();
                         } else {
-                            // ניקוי סיסמה אחרי כישלון
+                            // ניקוי אחרי כישלון
+                            editTextEmail.setText("");
                             editTextPassword.setText("");
-                            editTextPassword.requestFocus();
+                            editTextEmail.requestFocus();
+                            setButtonsEnabled(true);
 
-                            String errorMsg = task.getException() != null
-                                    ? task.getException().getMessage()
-                                    : "Authentication failed";
+                            String errorMsg = "Authentication failed";
+                            if (task.getException() != null)
+                                errorMsg = task.getException().getMessage();
 
                             Toast.makeText(LoginActivity.this,
                                     errorMsg,

@@ -3,7 +3,11 @@ package com.example.guysapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseUser;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -12,22 +16,20 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        // הסתרת ה-ActionBar העליון כדי שיהיה מסך מלא ויפה
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().hide();
-        }
-
         // טיימר של 3 שניות (3000 מילי-שניות)
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                // בדיקה חכמה: לאן להעביר את המשתמש?
-                if (FBRef.mAuth.getCurrentUser() != null) {
+                FirebaseUser user = FBRef.mAuth.getCurrentUser();
+                // בדיקה : לאן להעביר את המשתמש?
+                if (user != null) {
+                    Toast.makeText(SplashActivity.this,
+                            "Welcome back, " + user.getEmail(),
+                            Toast.LENGTH_SHORT).show();
                     // אם המשתמש כבר מחובר - ישר למסך הבית
                     startActivity(new Intent(SplashActivity.this, HomeActivity.class));
                 } else {
                     // אם לא מחובר - למסך ההתחברות
-                    // (אם שם המסך שלך אחר, למשל MainActivity, שנית את השם כאן)
                     startActivity(new Intent(SplashActivity.this, LoginActivity.class));
                 }
 

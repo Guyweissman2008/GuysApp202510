@@ -11,18 +11,22 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseUser;
@@ -45,30 +49,18 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText passwordEditText;
     private EditText confirmPasswordEditText;
 
-    private CheckBox notificationsCheckBox;
-
     private Button chooseImageButton;
     private Button takePhotoButton;
     private Button registerButton;
 
-    private TextView goToLoginText; // ← עובד עם text_login
+    private TextView goToLoginText;
 
     // Image state
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
 
     // Launchers
-    private final ActivityResultLauncher<Intent> imageResultLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts.StartActivityForResult(),
-                    result -> {
-                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                            Uri imageUri = result.getData().getData();
-                            loadBitmapFromUri(imageUri);
-                        }
-                    }
-            );
-
+    private ActivityResultLauncher<Intent> imageResultLauncher;
     private ActivityResultLauncher<String> requestCameraPermissionLauncher;
     private ActivityResultLauncher<Uri> cameraLauncher;
 
@@ -79,7 +71,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         initViews();
         setupListeners();
-        initCameraLaunchers();
+        initActivityResultLaunchers();
     }
 
     private void initViews() {
@@ -97,31 +89,66 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void setupListeners() {
 
-        chooseImageButton.setOnClickListener(v -> chooseImage());
+        chooseImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chooseImage();
+            }
+        });
 
-        takePhotoButton.setOnClickListener(v -> takePhoto());
+        takePhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takePhoto();
+            }
+        });
 
-        registerButton.setOnClickListener(v -> registerUser());
+        registerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                registerUser();
+            }
+        });
 
         // מעבר למסך התחברות
-        goToLoginText.setOnClickListener(v -> {
-            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
-            finish();
+        goToLoginText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+                finish();
+            }
         });
     }
 
-    private void initCameraLaunchers() {
+    private void initActivityResultLaunchers() {
+
+        imageResultLauncher =
+                registerForActivityResult(
+                        new ActivityResultContracts.StartActivityForResult(),
+                        new ActivityResultCallback<ActivityResult>() {
+                            @Override
+                            public void onActivityResult(ActivityResult result) {
+                                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                                    Uri imageUri = result.getData().getData();
+                                    loadBitmapFromUri(imageUri);
+                                }
+                            }
+                        }
+                );
 
         requestCameraPermissionLauncher =
                 registerForActivityResult(
                         new ActivityResultContracts.RequestPermission(),
-                        isGranted -> {
-                            if (isGranted) {
-                                openCamera();
-                            } else {
-                                Toast.makeText(this,
-                                        "הרשאת מצלמה דרושה כדי לצלם תמונה",
-                                        Toast.LENGTH_SHORT).show();
+                        new ActivityResultCallback<Boolean>() {
+                            @Override
+                            public void onActivityResult(Boolean isGranted) {
+                                if (isGranted) {
+                                    openCamera();
+                                } else {
+                                    Toast.makeText(RegisterActivity.this,
+                                            "הרשאת מצלמה דרושה כדי לצלם תמונה",
+                                            Toast.LENGTH_SHORT).show();
+                                }
                             }
                         }
                 );
@@ -129,9 +156,12 @@ public class RegisterActivity extends AppCompatActivity {
         cameraLauncher =
                 registerForActivityResult(
                         new ActivityResultContracts.TakePicture(),
-                        result -> {
-                            if (result) {
-                                loadBitmapFromUri(cameraImageUri);
+                        new ActivityResultCallback<Boolean>() {
+                            @Override
+                            public void onActivityResult(Boolean result) {
+                                if (result) {
+                                    loadBitmapFromUri(cameraImageUri);
+                                }
                             }
                         }
                 );
@@ -182,8 +212,8 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        String firstName = firstNameEditText.getText().toString();
-        String lastName = lastNameEditText.getText().toString();
+        String firstName = firstNameEditText.getText().toString().trim();;
+        String lastName = lastNameEditText.getText().toString().trim();;
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString();
         String confirmPassword = confirmPasswordEditText.getText().toString();
@@ -207,24 +237,29 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         FBRef.mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = FBRef.mAuth.getCurrentUser();
-                        if (user != null) {
-                            saveUserWithImage(
-                                    user.getUid(),
-                                    firstName,
-                                    lastName,
-                                    email
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            FirebaseUser user = FBRef.mAuth.getCurrentUser();
+                            if (user != null) {
+                                RegisterActivity.this.saveUserWithImage(
+                                        user.getUid(),
+                                        firstName,
+                                        lastName,
+                                        email
 
-                            );
+                                );
+                            }
+                        } else {
+                            String errorMsg = "Registration failed";
+                            if (task.getException() != null) {
+                                errorMsg = task.getException().getMessage();
+                            }
+                            Toast.makeText(RegisterActivity.this,
+                                    errorMsg,
+                                    Toast.LENGTH_LONG).show();
                         }
-                    } else {
-                        Toast.makeText(this,
-                                task.getException() != null
-                                        ? task.getException().getMessage()
-                                        : "Registration failed",
-                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -252,16 +287,39 @@ public class RegisterActivity extends AppCompatActivity {
 
         FBRef.refUsers.document(userId)
                 .set(userMap)
-                .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    finish();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error adding user data", Toast.LENGTH_SHORT).show());
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(RegisterActivity.this, "Registration successful", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                            finish();
+                        } else {
+                            // כשל ב-Firestore → rollback: מחיקת המשתמש מ-FirebaseAuth
+                            String errorMsg = "Error adding user data";
+                            if (task.getException() != null) {
+                                errorMsg = task.getException().getMessage();
+                            }
+                            Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+
+                            FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
+                            if (currentUser != null) {
+                                Task<Void> voidTask = currentUser.delete()
+                                        .addOnCompleteListener(deleteTask -> {
+                                            if (!deleteTask.isSuccessful() && deleteTask.getException() != null) {
+                                                Toast.makeText(RegisterActivity.this,
+                                                        "Failed to delete user after error: " + deleteTask.getException().getMessage(),
+                                                        Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                            }
+                        }
+                    }
+                });
     }
 
-    private void clearPasswords() {
+
+        private void clearPasswords() {
         passwordEditText.setText("");
         confirmPasswordEditText.setText("");
         passwordEditText.requestFocus();
