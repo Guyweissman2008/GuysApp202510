@@ -207,15 +207,15 @@ public class RegisterActivity extends AppCompatActivity {
             selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
             imageViewProfile.setImageBitmap(selectedBitmap);
         } catch (IOException e) {
-            Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "לא ניתן לטעון את התמונה", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void registerUser() {
         String firstName = firstNameEditText.getText().toString().trim();
-        ;
+
         String lastName = lastNameEditText.getText().toString().trim();
-        ;
+
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString();
         String confirmPassword = confirmPasswordEditText.getText().toString();
@@ -223,7 +223,7 @@ public class RegisterActivity extends AppCompatActivity {
         if (firstName.isEmpty() || lastName.isEmpty()
                 || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
 
-            Toast.makeText(this, "All fields must be filled", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "יש למלא את כל השדות", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -234,7 +234,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (selectedBitmap == null) {
-            Toast.makeText(this, "Please choose a profile image", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "בחר/י תמונת פרופיל", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -254,7 +254,7 @@ public class RegisterActivity extends AppCompatActivity {
                                 );
                             }
                         } else {
-                            String errorMsg = "Registration failed";
+                            String errorMsg = "הרשמה נכשלה";
                             if (task.getException() != null) {
                                 errorMsg = task.getException().getMessage();
                             }
@@ -293,12 +293,12 @@ public class RegisterActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
-                            Toast.makeText(RegisterActivity.this, "Registration successful", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(RegisterActivity.this, "ההרשמה הצליחה", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
                             finish();
                         } else {
                             // בעיה בשמירה ב-Firestore
-                            String errorMsg = "Error adding user data";
+                            String errorMsg = "שגיאה בשמירת פרטי המשתמש";
                             if (task.getException() != null) {
                                 errorMsg = task.getException().getMessage();
                             }
@@ -315,7 +315,7 @@ public class RegisterActivity extends AppCompatActivity {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if (!task.isSuccessful()) {
-                                                String errorMsg = "Failed to delete user after error";
+                                                String errorMsg = "שגיאה במחיקת המשתמש אחרי תקלה";
                                                 if (task.getException() != null &&
                                                         task.getException().getMessage() != null) {
                                                     errorMsg = task.getException().getMessage();

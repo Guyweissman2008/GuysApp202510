@@ -24,7 +24,7 @@ public class SplashActivity extends AppCompatActivity {
                 // בדיקה : לאן להעביר את המשתמש?
                 if (user != null) {
                     Toast.makeText(SplashActivity.this,
-                            "Welcome back, " + user.getEmail(),
+                            "כיף שחזרת, " + user.getEmail(),
                             Toast.LENGTH_SHORT).show();
                     // אם המשתמש כבר מחובר - ישר למסך הבית
                     startActivity(new Intent(SplashActivity.this, HomeActivity.class));

@@ -24,41 +24,45 @@ public class BaseActivity extends AppCompatActivity {
     protected void setupBottomNavigation(int selectedItemId) {
 
         bottomNav = findViewById(R.id.bottom_navigation);
+
         if (bottomNav == null) {
             return;
         }
 
         // להציג טקסט + אייקון
         bottomNav.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_LABELED);
-
         updateTitleBySelectedItem(selectedItemId);
-        bottomNav.setSelectedItemId(selectedItemId);
 
         bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+
                 int id = item.getItemId();
 
-                if (id == R.id.nav_home && selectedItemId != R.id.nav_home) {
+                // אם לחצו על המסך הנוכחי לא עושים כלום
+                if (id == selectedItemId) {
+                    return true;
+                }
+                else if (id == R.id.nav_home) {
                     navigateTo(HomeActivity.class);
                     return true;
-
-                } else if (id == R.id.nav_add && selectedItemId != R.id.nav_add) {
+                }
+                else if (id == R.id.nav_add) {
                     navigateTo(AddRecipeActivity.class);
                     return true;
-
-                } else if (id == R.id.nav_profile && selectedItemId != R.id.nav_profile) {
+                }
+                else if (id == R.id.nav_profile) {
                     navigateTo(ProfileActivity.class);
                     return true;
-
-                } else if (id == R.id.nav_logout) {
+                }
+                else if (id == R.id.nav_logout) {
                     logoutUser();
                     return true;
                 }
-
                 return false;
             }
         });
+        bottomNav.setSelectedItemId(selectedItemId);
     }
 
     private void updateTitleBySelectedItem(int selectedItemId) {

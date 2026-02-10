@@ -61,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
 
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this,
-                    "Please fill all fields",
+                    "יש למלא את כל השדות",
                     Toast.LENGTH_SHORT).show();
             return;
         }
@@ -78,19 +78,19 @@ public class LoginActivity extends AppCompatActivity {
 
                         if (task.isSuccessful()) {
                             Toast.makeText(LoginActivity.this,
-                                    "Authentication Successful",
+                                    "התחברת בהצלחה",
                                     Toast.LENGTH_SHORT).show();
 
                             startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                             finish();
                         } else {
                             // ניקוי אחרי כישלון
-                            editTextEmail.setText("");
+                            //editTextEmail.setText("");
                             editTextPassword.setText("");
-                            editTextEmail.requestFocus();
+                            editTextPassword.requestFocus();
                             setButtonsEnabled(true);
 
-                            String errorMsg = "Authentication failed";
+                            String errorMsg = "ההתחברות נכשלה";
                             if (task.getException() != null)
                                 errorMsg = task.getException().getMessage();
 

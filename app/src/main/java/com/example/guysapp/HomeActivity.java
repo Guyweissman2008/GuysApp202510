@@ -3,12 +3,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,7 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import android.text.InputType;  // <--- חשוב למקלדת מספרים
+import android.text.InputType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,95 +37,27 @@ public class HomeActivity extends BaseActivity {
     private List<Recipe> allRecipes;
     private List<Recipe> filteredRecipes;
     private com.google.android.material.chip.ChipGroup chipGroup;
-    private String selectedCategory = "הכל"; // קטגוריית ברירת מחדל
+    private String selectedCategory;
     private EditText searchEditText;
     private FrameLayout progressOverlay;
     private Set<String> savedRecipeIds;
     private ListenerRegistration recipesReg;
     private ListenerRegistration savedReg;
+    private FloatingActionButton btnTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
+        selectedCategory = "הכל"; // קטגוריית ברירת מחדל
+
         initLists();
-        setupBottomNavigation(R.id.nav_home);
         initViews();
         setupRecyclerView();
+        setupCategoryChips();
         setupListeners();
         setupBottomNavigation(R.id.nav_home);
-
-
-        // 4. === כפתור הטיימר (עם התיקון הסופי) ===
-        // === כפתור הטיימר: גרסה עם קלט ידני ===
-        FloatingActionButton btnTimer = findViewById(R.id.btn_kitchen_timer);
-
-        if (btnTimer != null) {
-            btnTimer.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // 1. יצירת שדה כתיבה
-                    final EditText input = new EditText(HomeActivity.this);
-                    input.setHint("לדוגמה: 20");
-                    input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
-
-                    // 2. בניית הדיאלוג
-                    AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
-                    builder.setTitle("כמה דקות לשים בטיימר?");
-                    builder.setView(input);
-
-                    // 3. כפתור אישור
-                    builder.setPositiveButton("הפעל", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            String minutesStr = input.getText().toString();
-
-                            if (minutesStr.isEmpty()) {
-                                Toast.makeText(HomeActivity.this, "לא הכנסת זמן!", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            int minutes = Integer.parseInt(minutesStr);
-
-                            // חישוב הזמן (דקות * 60 שניות * 1000)
-                            long durationInMillis = minutes * 60 * 1000;
-
-                            // קוד סודי לבוחן: 999 מפעיל טיימר של 10 שניות לבדיקה
-                            if (minutes == 999) {
-                                durationInMillis = 10000;
-                                Toast.makeText(HomeActivity.this, "מצב בדיקה: 10 שניות", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(HomeActivity.this, "⏰ טיימר הופעל ל-" + minutes + " דקות", Toast.LENGTH_SHORT).show();
-                            }
-
-                            final String timeText = minutes + " דקות";
-
-                            // הפעלת הטיימר
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    NotificationHelper.showNotification(
-                                            HomeActivity.this,
-                                            "האוכל מוכן! 🍲",
-                                            "עברו " + timeText + ", בוא לבדוק את המתכון."
-                                    );
-                                }
-                            }, durationInMillis);
-                        }
-                    });
-
-                    // 4. כפתור ביטול
-                    builder.setNegativeButton("ביטול", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-
-                    builder.show();
-                }
-            });
-        }
     }
 
     @Override
@@ -138,6 +72,7 @@ public class HomeActivity extends BaseActivity {
     @Override
     protected void onStop() {
         super.onStop();
+
         clearRegistrations();
     }
 
@@ -152,14 +87,13 @@ public class HomeActivity extends BaseActivity {
         recyclerView = findViewById(R.id.recyclerView_recipes);
         searchEditText = findViewById(R.id.editText_search);
         progressOverlay = findViewById(R.id.progress_overlay);
-        setupCategoryChips();
-
+        btnTimer = findViewById(R.id.btn_kitchen_timer); //כפתור הטיימר
     }
 
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // האדפטר מקבל רק רשימת מתכונים (בלי רשימת ids נפרדת)
+        // האדפטר מקבל רשימת מתכונים
         adapter = new RecipeAdapter(filteredRecipes);
         adapter.setSavedScreen(false);
         adapter.setShowDelete(false);
@@ -186,6 +120,83 @@ public class HomeActivity extends BaseActivity {
             @Override
             public void afterTextChanged(Editable s) { }
         });
+
+        // טיימר
+        if (btnTimer != null) {
+            btnTimer.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showTimerDialog();
+                }
+            });
+        }
+    }
+
+    private void showTimerDialog() {
+        // 1. יצירת שדה כתיבה
+        final EditText input = new EditText(HomeActivity.this);
+        input.setHint("לדוגמה: 20");
+        input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
+
+        // 2. בניית הדיאלוג
+        AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+        builder.setTitle("כמה דקות לשים בטיימר?");
+        builder.setView(input);
+
+        // 3. כפתור אישור
+        builder.setPositiveButton("הפעל", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startTimerFromInput(input.getText().toString().trim());
+            }
+        });
+
+        // 4. כפתור ביטול
+        builder.setNegativeButton("ביטול", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+    }
+
+    private void startTimerFromInput(String minutesStr) {
+        if (minutesStr.isEmpty()) {
+            Toast.makeText(this, "לא הכנסת זמן!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int minutes;
+        try {
+            minutes = Integer.parseInt(minutesStr);
+        } catch (Exception e) {
+            Toast.makeText(this, "הכנס מספר תקין", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        long durationInMillis = minutes * 60L * 1000L;
+
+        if (minutes == 999) {
+            durationInMillis = 10000;
+            Toast.makeText(this, "מצב בדיקה: 10 שניות", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "⏰ טיימר הופעל ל-" + minutes + " דקות", Toast.LENGTH_SHORT).show();
+        }
+
+        final String timeText = minutes + " דקות";
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                NotificationHelper.showNotification(
+                        HomeActivity.this,
+                        "האוכל מוכן! 🍲",
+                        "עברו " + timeText + ", בוא לבדוק את המתכון."
+                );
+            }
+        }, durationInMillis);
     }
 
     private void clearRegistrations() {
@@ -235,30 +246,26 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void filterRecipes(String query) {
-        String q = (query != null) ? query.toLowerCase().trim() : "";
-        List<Recipe> tempList = new ArrayList<>();
+        String q = cleanString(query);
 
-        // האם נבחרה קטגוריית "הכל"?
-        boolean isAllCategories = selectedCategory.equals("הכל");
+        String selectedClean = cleanString(selectedCategory);
+        boolean isAllCategories = selectedClean.equals("הכל");
+
+        List<Recipe> tempList = new ArrayList<>();
 
         for (Recipe recipe : allRecipes) {
             // הבאת הנתונים מהמתכון
-            String title = (recipe.getTitle() != null) ? recipe.getTitle().toLowerCase() : "";
-
-            // שליפת הקטגוריה מהמתכון (אם אין, שמים מחרוזת ריקה)
-            String recCategory = (recipe.getCategory() != null) ? recipe.getCategory() : "";
+            String title = cleanString(recipe.getTitle());
+            String recCategory = cleanString(recipe.getCategory());
 
             // --- בדיקה 1: האם הטקסט בחיפוש תואם? ---
             boolean matchesSearch = q.isEmpty() || title.contains(q);
 
             // --- בדיקה 2: האם הקטגוריה תואמת? ---
-            // אנחנו משתמשים ב-equalsIgnoreCase כדי ש"חלבי" יהיה שווה ל"חלבי" וגם ל"HLAVI"
-            // וגם ב-trim() כדי למחוק רווחים מיותרים
-            boolean matchesCategory = isAllCategories ||
-                    recCategory.trim().equalsIgnoreCase(selectedCategory.trim());
+            boolean matchesCategory = isAllCategories || recCategory.equals(selectedClean);
 
-            // הדפסה לדיבוג - תראי את זה ב-Logcat אם זה לא עובד
-            // android.util.Log.d("FILTER_DEBUG", "Checking: " + title + " | Cat: " + recCategory + " vs Selected: " + selectedCategory + " -> " + matchesCategory);
+            Log.d("filterRecipes",
+                    "title: " + title + ", recCat: " + recCategory + ", selectedCat: " + selectedClean + ", match: " + matchesCategory);
 
             if (matchesSearch && matchesCategory) {
                 tempList.add(recipe);
@@ -270,21 +277,10 @@ public class HomeActivity extends BaseActivity {
         sortFilteredRecipes();
         adapter.updateList(filteredRecipes);
     }
-    // פונקציה לניקוי יסודי של הטקסט לפני השוואה
-    private String cleanString(String input) {
-        if (input == null) return "";
-
-        // 1. הסרת ניקוד עברי (טווח היוניקוד של הניקוד)
-        String noNikkud = input.replaceAll("[\u0591-\u05C7]", "");
-
-        // 2. החלפת "רווח קשיח" (Non-breaking space) ברווח רגיל
-        String normalSpaces = noNikkud.replace("\u00A0", " ");
-
-        // 3. הסרת תווי כיוון נסתרים (RTL/LTR marks) שיש בוואטסאפ/אינטרנט
-        String noDirectionChars = normalSpaces.replaceAll("[\u200E\u200F]", "");
-
-        // 4. המרה לאותיות קטנות + הסרת רווחים מיותרים בצדדים
-        return noDirectionChars.trim().toLowerCase();
+    // פונקציה לניקוי טקסט
+    private String cleanString(String s) {
+        if (s == null) return "";
+        return s.trim().toLowerCase();
     }
 
     // מאזין לרשימת המתכונים השמורים של המשתמש (כדי להציג לב מלא/ריק)
@@ -321,8 +317,9 @@ public class HomeActivity extends BaseActivity {
                         }
 
                         adapter.setSavedIds(savedRecipeIds);
-                        String q = searchEditText.getText().toString();
+                        String q = (searchEditText != null) ? searchEditText.getText().toString() : "";
                         filterRecipes(q);
+
                     }
                 });
     }
@@ -353,23 +350,28 @@ public class HomeActivity extends BaseActivity {
             }
         });
     }
+    // מיון end
 
     private boolean isSaved(Recipe recipe) {
-        if (recipe == null || recipe.getRecipeId() == null) return false;
+        if (recipe == null || recipe.getRecipeId() == null)
+            return false;
         return savedRecipeIds.contains(recipe.getRecipeId());
     }
 
     private String safe(String s) {
         return s == null ? "" : s.trim().toLowerCase();
     }
-    // מיון end
+
     private void setupCategoryChips() {
         chipGroup = findViewById(R.id.categories_chip_group);
+        chipGroup.setSingleSelection(true);
+        chipGroup.setSelectionRequired(true);
         chipGroup.removeAllViews();
 
-        // 1. רשימת הקטגוריות (מתחילה ב"הכל")
+        // רשימת הקטגוריות
+        // ברירת המחדל - מתחילה ב"הכל"
         java.util.List<String> categoryList = new java.util.ArrayList<>();
-        categoryList.add("הכל"); // קטגוריית ברירת המחדל
+        categoryList.add("הכל");
 
         // טעינת הקטגוריות מהקובץ strings.xml
         String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
@@ -377,7 +379,7 @@ public class HomeActivity extends BaseActivity {
             categoryList.add(cat);
         }
 
-        // 2. יצירת הכפתורים
+        // כפתורים
         for (String cat : categoryList) {
             com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
             chip.setText(cat);
@@ -389,29 +391,25 @@ public class HomeActivity extends BaseActivity {
             chip.setChipStrokeColorResource(android.R.color.darker_gray);
             chip.setChipStrokeWidth(1f);
 
-            // מאזין ללחיצה
-            chip.setOnClickListener(v -> {
-                // בדיקה האם הכפתור סומן עכשיו או בוטל
-                boolean isChecked = chip.isChecked();
-
-                if (isChecked) {
-                    selectedCategory = cat; // אם סומן - נשמור את הקטגוריה
-                } else {
-                    selectedCategory = "הכל"; // אם בוטל הסימון - נחזור ל"הכל"
-                }
-
-                // הדפסה לבדיקה (חפשי ב-Logcat את המילה CHIP_CHECK)
-                android.util.Log.d("CHIP_CHECK", "Selected Category: " + selectedCategory);
-
-                // הפעלת הסינון מחדש
-                String currentSearchText = searchEditText.getText().toString();
-                filterRecipes(currentSearchText);
-            });
-
+            chip.setId(View.generateViewId());
             chipGroup.addView(chip);
         }
 
-        // סימון ברירת מחדל של הכפתור הראשון ("הכל")
+        chipGroup.setOnCheckedChangeListener(new com.google.android.material.chip.ChipGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(com.google.android.material.chip.ChipGroup group, int checkedId) {
+
+                com.google.android.material.chip.Chip checkedChip = group.findViewById(checkedId);
+                selectedCategory = (checkedChip != null) ? checkedChip.getText().toString() : "הכל";
+
+                Log.d("chipGroup.onCheckedChanged", "Selected Category: " + selectedCategory);
+
+                String currentSearchText = (searchEditText != null) ? searchEditText.getText().toString() : "";
+                filterRecipes(currentSearchText);
+            }
+        });
+
+        // סימון ברירת מחדל של הכל ("הכל")
         if (chipGroup.getChildCount() > 0) {
             ((com.google.android.material.chip.Chip) chipGroup.getChildAt(0)).setChecked(true);
             selectedCategory = "הכל";
