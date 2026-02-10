@@ -212,8 +212,10 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
-        String firstName = firstNameEditText.getText().toString().trim();;
-        String lastName = lastNameEditText.getText().toString().trim();;
+        String firstName = firstNameEditText.getText().toString().trim();
+        ;
+        String lastName = lastNameEditText.getText().toString().trim();
+        ;
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString();
         String confirmPassword = confirmPasswordEditText.getText().toString();
@@ -268,14 +270,14 @@ public class RegisterActivity extends AppCompatActivity {
                                    String firstName,
                                    String lastName,
                                    String email
-                                  ) {
+    ) {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
 
         List<Integer> byteList = new ArrayList<>();
         for (byte b : baos.toByteArray()) {
-            byteList.add((int) b);
+            byteList.add(b & 0xFF);
         }
 
         Map<String, Object> userMap = new HashMap<>();
@@ -295,34 +297,41 @@ public class RegisterActivity extends AppCompatActivity {
                             startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
                             finish();
                         } else {
-                            // כשל ב-Firestore → rollback: מחיקת המשתמש מ-FirebaseAuth
+                            // בעיה בשמירה ב-Firestore
                             String errorMsg = "Error adding user data";
                             if (task.getException() != null) {
                                 errorMsg = task.getException().getMessage();
                             }
                             Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
 
+                            // מחיקת המשתמש מ-FirebaseAuth
                             FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-                            if (currentUser != null) {
-                                currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> deleteTask) {
-                                        if (!deleteTask.isSuccessful() && deleteTask.getException() != null) {
-                                            Toast.makeText(RegisterActivity.this,
-                                                    "Failed to delete user after error: " + deleteTask.getException().getMessage(),
-                                                    Toast.LENGTH_LONG).show();
-                                        }
-                                    }
-                                });
+                            if (currentUser == null) {
+                                return;
                             }
 
+                            currentUser.delete()
+                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if (!task.isSuccessful()) {
+                                                String errorMsg = "Failed to delete user after error";
+                                                if (task.getException() != null &&
+                                                        task.getException().getMessage() != null) {
+                                                    errorMsg = task.getException().getMessage();
+                                                }
+                                                Toast.makeText(RegisterActivity.this,
+                                                        errorMsg,
+                                                        Toast.LENGTH_LONG).show();
+                                            }
+                                        }
+                                    });
                         }
                     }
                 });
     }
 
-
-        private void clearPasswords() {
+    private void clearPasswords() {
         passwordEditText.setText("");
         confirmPasswordEditText.setText("");
         passwordEditText.requestFocus();
