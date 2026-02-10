@@ -13,8 +13,8 @@ public class NotificationHelper {
     // יצירת ערוץ התראות (חובה מאנדרואיד 8 ומעלה)
     public static void createNotificationChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Kitchen Timer";
-            String description = "Timer for cooking";
+            CharSequence name = "טיימר מטבח";
+            String description = "התראות לזמן הכנה";
             int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);

@@ -11,13 +11,16 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (cm == null) return;
+
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
-        if (isConnected) {
-            Toast.makeText(context, "החיבור לאינטרנט פעיל", Toast.LENGTH_SHORT).show();
-        } else {
+        // לא יקפוץ במעברים Wi-Fi/סלולר אלא רק כשאין אינטרנט
+        if (!isConnected) {
             Toast.makeText(context, "אין חיבור לאינטרנט", Toast.LENGTH_SHORT).show();
         }
     }
