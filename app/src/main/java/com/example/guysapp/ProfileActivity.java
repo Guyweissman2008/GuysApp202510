@@ -29,8 +29,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,9 +57,11 @@ public class ProfileActivity extends BaseActivity {
 
     private boolean showingMyRecipes;
 
+    private final java.util.Map<String, ListenerRegistration> savedRecipeDocListeners = new java.util.HashMap<>();
+
     private ListenerRegistration myRecipesListener;
     private ListenerRegistration savedRecipesListener;
-    private ListenerRegistration savedIdsListener;
+    private ListenerRegistration savedRecipeIdsForHeartsListener;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -75,8 +77,6 @@ public class ProfileActivity extends BaseActivity {
         setupRecyclerView();
         setupListeners();
         initActivityResultLaunchers();
-
-        loadUserProfile();
     }
 
     private void initLists() {
@@ -85,13 +85,26 @@ public class ProfileActivity extends BaseActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        loadUserProfile();
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
 
-        removeListener(myRecipesListener);
-        removeListener(savedRecipesListener);
-        removeListener(savedIdsListener);
+        removeListener(myRecipesListener);      // מתכונים שלי (refRecipes לפי userId)
+        removeListener(savedRecipesListener);   // רשימת השמורים (refSavedRecipes)
+        removeListener(savedRecipeIdsForHeartsListener); // IDs של שמורים בשביל לבבות
+
+        for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
+            removeListener(lr);                 // מאזין לכל מתכון שמור (refRecipes/{recipeId})
+        }
+        savedRecipeDocListeners.clear();
     }
+
 
     private void initViews() {
         profileImage = findViewById(R.id.profile_image);
@@ -174,7 +187,7 @@ public class ProfileActivity extends BaseActivity {
 
         String userId = currentUser.getUid();
 
-        adapter.setSavedScreen(false);
+        adapter.setSavedScreen(!showingMyRecipes);
         adapter.setShowDelete(true);
         adapter.setCurrentUserID(userId);
 
@@ -236,25 +249,35 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void loadMyRecipesRealtime(String userId) {
+        // סגירת מאזין קודם כדי למנוע מאזינים כפולים
         removeListener(myRecipesListener);
 
+        // מאזין RealTime לכל המתכונים שהמשתמש יצר
         myRecipesListener = FBRef.refRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshot, @Nullable FirebaseFirestoreException e) {
+                    // כל שינוי במתכונים של המשתמש (הוספה / עדכון / מחיקה)
+                    // מפעיל מחדש את onEvent עם snapshot עדכני
+                    public void onEvent(@Nullable QuerySnapshot snapshot,
+                                        @Nullable FirebaseFirestoreException e) {
+
                         if (e != null || snapshot == null)
                             return;
 
+                        // מתחילים מרשימה נקייה – תמונה חדשה של "המתכונים שלי"
                         myRecipes.clear();
+
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
                             Recipe recipe = doc.toObject(Recipe.class);
-                            if (recipe == null)
-                                continue;
-                            recipe.setRecipeId(doc.getId());
-                            myRecipes.add(recipe);
+                            if (recipe != null) {
+                                // שמירת ה־id של המסמך בתוך האובייקט
+                                recipe.setRecipeId(doc.getId());
+                                myRecipes.add(recipe);
+                            }
                         }
 
+                        // עדכון המסך רק אם המשתמש נמצא בתצוגת "המתכונים שלי"
                         if (showingMyRecipes) {
                             adapter.updateList(myRecipes);
                         }
@@ -262,105 +285,161 @@ public class ProfileActivity extends BaseActivity {
                 });
     }
 
+
     private void loadSavedRecipesRealtime(String userId) {
+        // סגירת מאזין קודם כדי למנוע הצטברות מאזינים
         removeListener(savedRecipesListener);
 
+        // מאזין RealTime לרשימת ה־SavedRecipes של המשתמש
         savedRecipesListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshot, @Nullable FirebaseFirestoreException e) {
+                    // כל שינוי בשמירה / הסרה של מתכון
+                    // מפעיל מחדש את onEvent עם snapshot עדכני
+                    public void onEvent(@Nullable QuerySnapshot snapshot,
+                                        @Nullable FirebaseFirestoreException e) {
+
                         if (e != null || snapshot == null)
                             return;
 
-                        savedRecipes.clear();
-
-                        // אם המשתמש כבר במסך שמורים – מנקים את המסך לפני טעינה מחדש
-                        if (!showingMyRecipes) {
-                            adapter.updateList(savedRecipes);
+                        // סגירת מאזינים קודמים של מסמכי מתכונים
+                        for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
+                            removeListener(lr);
                         }
+                        savedRecipeDocListeners.clear();
 
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            SavedRecipe saved = doc.toObject(SavedRecipe.class);
-                            if (saved == null) {
-                                cleanInvalidSavedRecipe(doc.getId());
+                        // מתחילים מרשימה ריקה – snapshot חדש
+                        savedRecipes.clear();
+                        if (!showingMyRecipes)
+                            adapter.updateList(savedRecipes);
+
+                        if (snapshot.isEmpty())
+                            return;
+
+                        for (DocumentSnapshot savedDoc : snapshot.getDocuments()) {
+                            SavedRecipe saved = savedDoc.toObject(SavedRecipe.class);
+                            if (saved == null)
                                 continue;
-                            }
 
                             String rid = saved.getRecipeId();
-                            if (rid == null || rid.isEmpty())
+                            if (rid == null || rid.trim().isEmpty())
                                 continue;
 
-                            Recipe recipe = new Recipe();
-                            recipe.setRecipeId(rid);
-                            recipe.setTitle(saved.getTitle());
-                            recipe.setUsername(saved.getAuthorName());
-                            recipe.setUserId(saved.getRecipeOwnerId());
-                            recipe.setImageData(saved.getImageData());
-
-                            // מוסיפים מיד לרשימה כדי שהשמורים יופיעו גם לפני טעינת category
-                            savedRecipes.add(recipe);
-
-                            // --- Fetch original recipe to get category ---
-                            FBRef.refRecipes.document(rid).get()
-                                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                            // מאזין RealTime למסמך המתכון המקורי
+                            ListenerRegistration lr = FBRef.refRecipes.document(rid)
+                                    .addSnapshotListener(new EventListener<DocumentSnapshot>() {
                                         @Override
-                                        public void onSuccess(DocumentSnapshot originalDoc) {
-                                            if (originalDoc.exists()) {
-                                                String category = originalDoc.getString("category");
-                                                recipe.setCategory(category);
+                                        // כל שינוי במתכון עצמו (עדכון / מחיקה)
+                                        public void onEvent(@Nullable DocumentSnapshot recipeDoc,
+                                                            @Nullable FirebaseFirestoreException err) {
+
+                                            if (err != null || recipeDoc == null)
+                                                return;
+
+                                            // אם המתכון המקורי נמחק – מסירים אותו מהשמורים
+                                            if (!recipeDoc.exists()) {
+                                                removeRecipeFromSavedList(rid);
+                                                if (!showingMyRecipes)
+                                                    adapter.updateList(savedRecipes);
+                                                return;
                                             }
 
-                                            // רענון קטן רק כדי שהקטגוריה תתעדכן אם מציגים עכשיו שמורים
-                                            if (!showingMyRecipes) {
-                                                adapter.notifyDataSetChanged();
-                                            }
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception err) {
-                                            // אם נכשל, פשוט מוסיפים בלי category
-                                            if (!showingMyRecipes) {
-                                                adapter.notifyDataSetChanged();
-                                            }
+                                            // המתכון קיים – עדכון / הוספה לרשימת השמורים
+                                            Recipe r = recipeDoc.toObject(Recipe.class);
+                                            if (r == null)
+                                                return;
+
+                                            r.setRecipeId(recipeDoc.getId());
+                                            upsertSavedRecipe(r);
+
+                                            // עדכון מסך רק אם נמצאים בתצוגת Saved
+                                            if (!showingMyRecipes)
+                                                adapter.updateList(savedRecipes);
                                         }
                                     });
-                        }
-                        // אם כרגע במסך "שמורים" – מציגים מייד
-                        if (!showingMyRecipes) {
-                            adapter.updateList(savedRecipes);
+
+                            // שמירת המאזין כדי שנוכל לסגור אותו בהמשך
+                            savedRecipeDocListeners.put(rid, lr);
                         }
                     }
                 });
     }
 
-    private void loadSavedRecipeIdsForHearts(String userId) {
-        removeListener(savedIdsListener);
 
-        savedIdsListener = FBRef.refSavedRecipes
+    private void upsertSavedRecipe(Recipe updated) {
+        if (updated == null || updated.getRecipeId() == null)
+            return;
+
+        for (int i = 0; i < savedRecipes.size(); i++) {
+            Recipe recipe = savedRecipes.get(i);
+            if (recipe != null && updated.getRecipeId().equals(recipe.getRecipeId())) {
+                savedRecipes.set(i, updated);
+                return;
+            }
+        }
+        savedRecipes.add(updated);
+    }
+
+    private void removeRecipeFromSavedList(String recipeId) {
+        if (recipeId == null)
+            return;
+
+        for (int i = 0; i < savedRecipes.size(); i++) {
+            Recipe recipe = savedRecipes.get(i);
+            if (recipe != null && recipeId.equals(recipe.getRecipeId())) {
+                savedRecipes.remove(i);
+                return;
+            }
+        }
+    }
+
+
+    private void loadSavedRecipeIdsForHearts(String userId) {
+        // סגירת מאזין קודם כדי למנוע כפילויות
+        removeListener(savedRecipeIdsForHeartsListener);
+
+        // מאזין RealTime לרשימת המתכונים השמורים של המשתמש
+        // משמש רק לצורך סימון לבבות (Saved / Not Saved)
+        savedRecipeIdsForHeartsListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    public void onEvent(@Nullable QuerySnapshot snapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null || snapshots == null)
-                            return;
+                    // כל שמירה או הסרה של מתכון
+                    // מעדכנת את סט ה־IDs של הלבבות
+                    public void onEvent(@Nullable QuerySnapshot snapshots,
+                                        @Nullable FirebaseFirestoreException e) {
 
+                        if (e != null || snapshots == null) {
+                            // במקרה של שגיאה – מאפסים לבבות
+                            adapter.setSavedIds(new HashSet<>());
+                            return;
+                        }
+
+                        // סט מזהי מתכונים שמורים (ללא כפילויות)
                         Set<String> ids = new HashSet<>();
-                        for (QueryDocumentSnapshot doc : snapshots) {
+
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
                             SavedRecipe saved = doc.toObject(SavedRecipe.class);
-                            if (saved != null && saved.getRecipeId() != null) {
-                                ids.add(saved.getRecipeId());
+                            if (saved == null)
+                                continue;
+
+                            String rid = saved.getRecipeId();
+                            if (rid == null)
+                                continue;
+
+                            rid = rid.trim();
+                            if (!rid.isEmpty()) {
+                                ids.add(rid);
                             }
                         }
+
+                        // עדכון האדפטר אילו מתכונים מסומנים כ־Saved
                         adapter.setSavedIds(ids);
                     }
                 });
     }
 
-    private void cleanInvalidSavedRecipe(String savedDocId) {
-        FBRef.refSavedRecipes.document(savedDocId).delete();
-    }
 
     private void showMyRecipes() {
         showingMyRecipes = true;
@@ -457,22 +536,22 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
-            String currentFullName = tvFullName.getText().toString().trim();
-            if (currentFullName.isEmpty())
-                return;
+        String currentFullName = tvFullName.getText().toString().trim();
+        if (currentFullName.isEmpty())
+            return;
 
-            String[] parts = currentFullName.split(" ");
-            if (parts.length > 0)
-                etFirstName.setText(parts[0]);
+        String[] parts = currentFullName.split(" ");
+        if (parts.length > 0)
+            etFirstName.setText(parts[0]);
 
-            if (parts.length > 1) {
-                StringBuilder lastNameBuilder = new StringBuilder();
-                for (int i = 1; i < parts.length; i++) {
-                    lastNameBuilder.append(parts[i]).append(" ");
-                }
-                etLastName.setText(lastNameBuilder.toString().trim());
+        if (parts.length > 1) {
+            StringBuilder lastNameBuilder = new StringBuilder();
+            for (int i = 1; i < parts.length; i++) {
+                lastNameBuilder.append(parts[i]).append(" ");
             }
+            etLastName.setText(lastNameBuilder.toString().trim());
         }
+    }
 
 
     private void saveProfileChanges(String firstName, String lastName, AlertDialog dialog, Button btnSave) {
@@ -530,7 +609,7 @@ public class ProfileActivity extends BaseActivity {
                         }
 
                         // 3. עדכון מסד הנתונים עבור מסך הבית ושאר המשתמשים
-                        updateRecipesAuthorName(userId, fullName);
+                        updateRecipeAuthorNameInDatabase(userId, fullName);
                         setSavingState(false, btnSave);
                         dialog.dismiss(); // סוגרים רק אחרי הצלחה
                     }
@@ -556,15 +635,22 @@ public class ProfileActivity extends BaseActivity {
 
 
     // פונקציית עזר לעדכון מתכונים
-    private void updateRecipesAuthorName(String userId, String newFullName) {
+    // Updates author display name in Recipes (field: "username")
+    private void updateRecipeAuthorNameInDatabase(String userId, String newFullName) {
+        setLoading(true);
         // מחפשים את כל המתכונים שהמשתמש הזה יצר
         FBRef.refRecipes.whereEqualTo("userId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot querySnapshot) {
 
+                        if (querySnapshot == null || querySnapshot.isEmpty()) {
+                            setLoading(false);
+                            return;
+                        }
+
                         // אנו משתמשים ב-WriteBatch כדי לעשות הרבה עדכונים בבת אחת בצורה יעילה
-                        com.google.firebase.firestore.WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
+                        WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
 
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                             // "username" הוא השדה במתכון שמחזיק את שם המחבר (לפי המבנה המקובל)
@@ -573,34 +659,57 @@ public class ProfileActivity extends BaseActivity {
                         }
 
                         // הרצת העדכון למתכונים
-                        batch.commit().addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                // שלב ג: עדכון מתכונים שמורים (SavedRecipes)
-                                // אם שמרו מתכון שלך, צריך לעדכן שם את ה-AuthorName כדי שיראו את השם החדש
-                                updateSavedRecipesAuthorName(userId, newFullName);
+                        batch.commit()
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        // שלב ג: עדכון מתכונים שמורים (SavedRecipes)
+                                        // אם שמרו מתכון שלך, צריך לעדכן שם את ה-AuthorName כדי שיראו את השם החדש
+                                        updateSavedRecipeAuthorNameInDatabase(userId, newFullName);
 
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                progressBar.setVisibility(View.GONE);
-                            }
-                        });
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        setLoading(false);
+                                        Toast.makeText(ProfileActivity.this,
+                                                "שגיאה בעדכון מתכונים שלי: " + e.getMessage(),
+                                                Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        ProfileActivity.this.setLoading(false);
+                        Toast.makeText(ProfileActivity.this,
+                                "שגיאה בשליפת המתכונים שלי לעדכון: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
-
     }
 
     // פונקציית עזר לעדכון מתכונים שמורים
-    private void updateSavedRecipesAuthorName(String userId, String newFullName) {
+    // Updates author display name in SavedRecipes (field: "authorName")
+    private void updateSavedRecipeAuthorNameInDatabase(String userId, String newFullName) {
+
         // כאן אנחנו מחפשים במסמכי SavedRecipes איפה שה-recipeOwnerId הוא המשתמש שלנו
         FBRef.refSavedRecipes.whereEqualTo("recipeOwnerId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot querySnapshot) {
 
-                        com.google.firebase.firestore.WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
+                        if (querySnapshot == null || querySnapshot.isEmpty()) {
+                            setLoading(false);
+                            Toast.makeText(ProfileActivity.this,
+                                    "הפרופיל עודכן בהצלחה!",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        // אנו משתמשים ב-WriteBatch כדי לעשות הרבה עדכונים בבת אחת בצורה יעילה
+                        WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
 
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                             // בודקים איך קוראים לשדה אצלך ב-SavedRecipe. בדרך כלל authorName
@@ -608,9 +717,26 @@ public class ProfileActivity extends BaseActivity {
                         }
 
                         batch.commit().addOnSuccessListener(aVoid -> {
-                            progressBar.setVisibility(View.GONE);
-                            Toast.makeText(ProfileActivity.this, "הפרופיל עודכן בהצלחה בכל האפליקציה!", Toast.LENGTH_LONG).show();
-                        });
+                                    setLoading(false);
+                                    Toast.makeText(ProfileActivity.this,
+                                            "הפרופיל עודכן בהצלחה בכל האפליקציה!",
+                                            Toast.LENGTH_LONG).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    setLoading(false);
+                                    Toast.makeText(ProfileActivity.this,
+                                            "שגיאה בעדכון מתכונים שמורים: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        ProfileActivity.this.setLoading(false);
+                        Toast.makeText(ProfileActivity.this,
+                                "שגיאה בשליפת המתכונים השמורים לעדכון: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
