@@ -535,6 +535,7 @@ public class ProfileActivity extends BaseActivity {
         });
     }
 
+    //TODO
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
         String currentFullName = tvFullName.getText().toString().trim();
         if (currentFullName.isEmpty())
