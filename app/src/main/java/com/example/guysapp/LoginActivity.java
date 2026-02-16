@@ -16,7 +16,7 @@ import com.google.firebase.auth.AuthResult;
 
 public class LoginActivity extends AppCompatActivity {
 
-    // UI
+    // UI Elements
     private EditText editTextEmail;
     private EditText editTextPassword;
     private Button buttonLogin;
@@ -49,6 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         buttonRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Go to Register screen
                 startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
                 finish();
             }
@@ -59,9 +60,10 @@ public class LoginActivity extends AppCompatActivity {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextPassword.getText().toString();
 
+        // Validation check
         if (email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this,
-                    "יש למלא את כל השדות",
+                    "Please fill in all fields",
                     Toast.LENGTH_SHORT).show();
             return;
         }
@@ -77,20 +79,21 @@ public class LoginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
 
                         if (task.isSuccessful()) {
+                            // Login successful
+
                             Toast.makeText(LoginActivity.this,
-                                    "התחברת בהצלחה",
+                                    "Logged in successfully",
                                     Toast.LENGTH_SHORT).show();
 
                             startActivity(new Intent(LoginActivity.this, HomeActivity.class));
                             finish();
                         } else {
-                            // ניקוי אחרי כישלון
-                            //editTextEmail.setText("");
+                            // Login failed - reset UI
                             editTextPassword.setText("");
                             editTextPassword.requestFocus();
                             setButtonsEnabled(true);
 
-                            String errorMsg = "ההתחברות נכשלה";
+                            String errorMsg = "Login failed";
                             if (task.getException() != null)
                                 errorMsg = task.getException().getMessage();
 

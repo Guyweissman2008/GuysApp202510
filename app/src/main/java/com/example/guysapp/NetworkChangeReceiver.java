@@ -19,9 +19,12 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
-        // לא יקפוץ במעברים Wi-Fi/סלולר אלא רק כשאין אינטרנט
         if (!isConnected) {
-            Toast.makeText(context, "אין חיבור לאינטרנט", Toast.LENGTH_SHORT).show();
+            // אין אינטרנט
+            Toast.makeText(context, "No Internet Connection ⚠️", Toast.LENGTH_LONG).show();
+        } else {
+
+            Toast.makeText(context, "You are back online! ✅", Toast.LENGTH_SHORT).show();
         }
     }
 }

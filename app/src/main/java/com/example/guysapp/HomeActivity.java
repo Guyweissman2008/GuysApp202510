@@ -44,13 +44,13 @@ public class HomeActivity extends BaseActivity {
     private ListenerRegistration recipesReg;
     private ListenerRegistration savedReg;
     private FloatingActionButton btnTimer;
-
+    private NetworkChangeReceiver networkReceiver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        selectedCategory = "הכל"; // קטגוריית ברירת מחדל
+        selectedCategory = "All"; // קטגוריית ברירת מחדל
 
         initLists();
         initViews();
@@ -63,17 +63,31 @@ public class HomeActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
         clearRegistrations();
         recipesReg = loadRecipesRealtime();
         savedReg = loadSavedRecipeIdsRealtime();
+        //(בדיקת אינטרנט)
+        if (networkReceiver == null) {
+            networkReceiver = new NetworkChangeReceiver();
+        }
+        // יצירת פילטר שאומר "תקשיב לשינויים בחיבוריות"
+        android.content.IntentFilter filter = new android.content.IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION);
+        // רישום המאזין
+        registerReceiver(networkReceiver, filter);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-
         clearRegistrations();
+
+        if (networkReceiver != null) {
+            try {
+                unregisterReceiver(networkReceiver);
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void initLists() {
@@ -135,16 +149,16 @@ public class HomeActivity extends BaseActivity {
     private void showTimerDialog() {
         // 1. יצירת שדה כתיבה
         final EditText input = new EditText(HomeActivity.this);
-        input.setHint("לדוגמה: 20");
+        input.setHint("e.g., 20");
         input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
 
         // 2. בניית הדיאלוג
         AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
-        builder.setTitle("כמה דקות לשים בטיימר?");
+        builder.setTitle("Set Timer (Minutes)");
         builder.setView(input);
 
         // 3. כפתור אישור
-        builder.setPositiveButton("הפעל", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Start", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 startTimerFromInput(input.getText().toString().trim());
@@ -152,7 +166,7 @@ public class HomeActivity extends BaseActivity {
         });
 
         // 4. כפתור ביטול
-        builder.setNegativeButton("ביטול", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
@@ -164,36 +178,33 @@ public class HomeActivity extends BaseActivity {
 
     private void startTimerFromInput(String minutesStr) {
         if (minutesStr.isEmpty()) {
-            Toast.makeText(this, "לא הכנסת זמן!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter time!", Toast.LENGTH_SHORT).show();
             return;
         }
-
         int minutes;
         try {
             minutes = Integer.parseInt(minutesStr);
         } catch (Exception e) {
-            Toast.makeText(this, "הכנס מספר תקין", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter a valid number", Toast.LENGTH_SHORT).show();
             return;
         }
-
         long durationInMillis = minutes * 60L * 1000L;
-
         if (minutes == 999) {
             durationInMillis = 10000;
-            Toast.makeText(this, "מצב בדיקה: 10 שניות", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Debug Mode: 10 seconds", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "⏰ טיימר הופעל ל-" + minutes + " דקות", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "⏰ Timer set for " + minutes + " minutes", Toast.LENGTH_SHORT).show();
         }
 
-        final String timeText = minutes + " דקות";
+        final String timeText = minutes + " minutes"; // במקום "דקות"
 
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 NotificationHelper.showNotification(
                         HomeActivity.this,
-                        "האוכל מוכן! 🍲",
-                        "עברו " + timeText + ", בוא לבדוק את המתכון."
+                        "Food is Ready! ",
+                        "Time is up! (" + timeText + "), check your recipe." // גוף ההתראה
                 );
             }
         }, durationInMillis);
@@ -249,7 +260,7 @@ public class HomeActivity extends BaseActivity {
         String q = cleanString(query);
 
         String selectedClean = cleanString(selectedCategory);
-        boolean isAllCategories = selectedClean.equals("הכל");
+        boolean isAllCategories = selectedClean.equals("all");
 
         List<Recipe> tempList = new ArrayList<>();
 
@@ -371,7 +382,7 @@ public class HomeActivity extends BaseActivity {
         // רשימת הקטגוריות
         // ברירת המחדל - מתחילה ב"הכל"
         java.util.List<String> categoryList = new java.util.ArrayList<>();
-        categoryList.add("הכל");
+        categoryList.add("All");
 
         // טעינת הקטגוריות מהקובץ strings.xml
         String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
@@ -400,7 +411,7 @@ public class HomeActivity extends BaseActivity {
             public void onCheckedChanged(com.google.android.material.chip.ChipGroup group, int checkedId) {
 
                 com.google.android.material.chip.Chip checkedChip = group.findViewById(checkedId);
-                selectedCategory = (checkedChip != null) ? checkedChip.getText().toString() : "הכל";
+                selectedCategory = (checkedChip != null) ? checkedChip.getText().toString() : "All";
 
                 Log.d("chipGroup.onCheckedChanged", "Selected Category: " + selectedCategory);
 
@@ -412,7 +423,7 @@ public class HomeActivity extends BaseActivity {
         // סימון ברירת מחדל של הכל ("הכל")
         if (chipGroup.getChildCount() > 0) {
             ((com.google.android.material.chip.Chip) chipGroup.getChildAt(0)).setChecked(true);
-            selectedCategory = "הכל";
+            selectedCategory = "All";
         }
     }
 }

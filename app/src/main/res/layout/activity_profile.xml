@@ -1,103 +1,92 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
     <LinearLayout
         android:id="@+id/layout_top"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="#66FFBFD7"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
 
         <ImageView
             android:id="@+id/profile_image"
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@mipmap/ic_launcher_round"
-            android:scaleType="centerCrop"
             android:layout_gravity="center"
-            android:clipToOutline="true"
             android:background="#FFE6EB"
-            android:padding="8dp" />
+            android:clipToOutline="true"
+            android:padding="8dp"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher_round" />
+
         <ImageView
             android:id="@+id/button_edit_profile"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:layout_alignTop="@id/image_recipe"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="6dp"
-            android:layout_toEndOf="@id/image_delete_recipe"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
             android:src="@drawable/ic_edit" />
 
         <TextView
             android:id="@+id/text_email"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
             android:text="user@example.com"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_gravity="center"
-            android:layout_marginTop="12dp"/>
+            android:textStyle="bold" />
 
-        <LinearLayout
-            android:id="@+id/layout_buttons"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/button_toggle_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:layout_marginTop="16dp"
-            android:gravity="center">
+            app:checkedButton="@id/button_my_recipes"
+            app:singleSelection="true">
 
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/button_toggle_group"
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_my_recipes"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:singleSelection="true"
-                app:checkedButton="@id/button_my_recipes"
-                android:orientation="horizontal"
-                android:layout_marginTop="16dp">
+                android:layout_weight="1"
+                android:text="My Recipes"
+                android:textColor="@android:color/white"
+                app:backgroundTint="@color/button_bg_color" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_my_recipes"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    app:backgroundTint="@color/button_bg_color"
-                    android:text="המתכונים שלי"
-                    android:textColor="@android:color/white" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_saved_recipes"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Saved"
+                android:textColor="@android:color/white"
+                app:backgroundTint="@color/button_bg_color" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_saved_recipes"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    app:backgroundTint="@color/button_bg_color"
-                    android:text="שמורים"
-                    android:textColor="@android:color/white" />
-
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-
-
-
-
-
-
-        </LinearLayout>
+        </com.google.android.material.button.MaterialButtonToggleGroup>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView_user_recipes"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/layout_top"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp"
         android:background="#66FFBFD7"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_top" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
@@ -107,10 +96,10 @@
         app:itemIconTint="#781637"
         app:itemTextColor="#C7577C"
         app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:menu="@menu/bottom_nav_menu" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -118,9 +107,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

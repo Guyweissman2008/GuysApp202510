@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
@@ -71,44 +70,50 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipeList.get(position);
         if (recipe == null)
             return;
+
         String recipeId = recipe.getRecipeId();
+
+        // כותרת ותיאור
         holder.title.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
         holder.description.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
-        holder.category.setText("קטגוריה: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
-        String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "משתמש אנונימי";
-        holder.username.setText("הועלה על ידי: " + displayAuthor);
-        //TextView textPrepTime;
+
+        // קטגוריה (Category)
+        holder.category.setText("Category: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
+
+        // מחבר (Uploaded by)
+        String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "Anonymous";
+        holder.username.setText("Uploaded by: " + displayAuthor);
+
         bindImage(holder, recipe);
         bindSaveState(holder, recipeId);
         bindSaveClick(holder, recipe, recipeId, displayAuthor);
         bindDeleteClick(holder, recipeId, recipe);
         bindEditClick(holder, recipeId, recipe);
+
+        // זמן הכנה (mins)
         if (recipe.getPreparationTime() != null && !recipe.getPreparationTime().isEmpty()) {
-            holder.textPrepTime.setText(recipe.getPreparationTime() + " דקות");
+            holder.textPrepTime.setText(recipe.getPreparationTime() + " mins");
             holder.textPrepTime.setVisibility(View.VISIBLE);
         } else {
-            // למתכונים ישנים שאין להם זמן - נסתיר את השורה
             holder.textPrepTime.setVisibility(View.GONE);
         }
+
+        // כפתור שיתוף (Share)
         holder.buttonShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //הטקסט שאני כותבת
-                String shareBody = "היי! מצאתי מתכון מעולה \n\n" +
-                        "שם המתכון: " + recipe.getTitle() + "\n" +
-                        "קטגוריה: " + recipe.getCategory() + "\n\n" +
-                        "מומלץ לנסות!";
+                // הודעת השיתוף באנגלית
+                String shareBody = "Hey! check out this great recipe: \n\n" +
+                        "Recipe Name: " + recipe.getTitle() + "\n" +
+                        "Category: " + recipe.getCategory() + "\n\n" +
+                        "Recommended!";
 
-                //יוצרת אינטנט
                 Intent sendIntent = new Intent();
                 sendIntent.setAction(Intent.ACTION_SEND);
                 sendIntent.putExtra(Intent.EXTRA_TEXT, shareBody);
                 sendIntent.setType("text/plain");
 
-                //פתיחת שיתוף
-                Intent shareIntent = Intent.createChooser(sendIntent, "שתף מתכון דרך...");
-
-                // צריך Context כדי לפתוח מסך חדש, אנחנו לוקחים אותו מהכפתור עצמו,להשיג גישה ולבצע את פעולת השיתוף.
+                Intent shareIntent = Intent.createChooser(sendIntent, "Share recipe via...");
                 v.getContext().startActivity(shareIntent);
             }
         });
@@ -161,12 +166,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 String uid = FBRef.mAuth.getCurrentUser().getUid();
                 String docId = buildSavedDocId(uid, recipeId);
 
+                // נסיון לקרוא אם המסמך קיים (האם כבר שמור?)
                 FBRef.refSavedRecipes.document(docId).get()
                         .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                             @Override
                             public void onSuccess(DocumentSnapshot documentSnapshot) {
-
                                 if (documentSnapshot.exists()) {
+                                    // אם קיים - מחק (Unsave)
                                     FBRef.refSavedRecipes.document(docId).delete()
                                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
@@ -174,22 +180,22 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                     savedIds.remove(recipeId);
                                                     notifyDataSetChanged();
                                                     Toast.makeText(v.getContext(),
-                                                            "הוסרה שמירה",
+                                                            "Removed from favorites", // תרגום
                                                             Toast.LENGTH_SHORT).show();
                                                 }
                                             })
                                             .addOnFailureListener(new OnFailureListener() {
-                                                                      @Override
-                                                                      public void onFailure(@NonNull Exception e) {
-                                                                          Toast.makeText(v.getContext(), "שגיאה: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                                                      }
-                                                                  }
-                                            );
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Toast.makeText(v.getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                                }
+                                            });
                                 } else {
+                                    // אם לא קיים - צור חדש (Save)
                                     SavedRecipe savedRecipe = new SavedRecipe(
                                             uid,
                                             recipeId,
-                                            recipe.getUserId()  // recipeOwnerId
+                                            recipe.getUserId()
                                     );
 
                                     FBRef.refSavedRecipes.document(docId)
@@ -200,26 +206,25 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                     savedIds.add(recipeId);
                                                     notifyDataSetChanged();
                                                     Toast.makeText(v.getContext(),
-                                                            "נשמר בהצלחה",
+                                                            "Saved successfully", // תרגום
                                                             Toast.LENGTH_SHORT).show();
                                                 }
                                             })
                                             .addOnFailureListener(new OnFailureListener() {
                                                 @Override
                                                 public void onFailure(@NonNull Exception e) {
-                                                    Toast.makeText(v.getContext(), "שגיאה: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                                    Toast.makeText(v.getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                                 }
                                             });
                                 }
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
-                                                  @Override
-                                                  public void onFailure(@NonNull Exception e) {
-                                                      Toast.makeText(v.getContext(), "שגיאה: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                                  }
-                                              }
-                        );
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(v.getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
             }
         });
     }
@@ -255,7 +260,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                             public void onSuccess(Void aVoid) {
                                 RecipeAdapter.this.deleteSavedReferencesForRecipe(v.getContext(), recipeId);
                                 Toast.makeText(v.getContext(),
-                                        "המתכון נמחק",
+                                        "Recipe deleted", // תרגום
                                         Toast.LENGTH_SHORT).show();
                             }
                         })
@@ -263,7 +268,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 Toast.makeText(v.getContext(),
-                                        "שגיאה: " + e.getMessage(),
+                                        "Error: " + e.getMessage(),
                                         Toast.LENGTH_LONG).show();
                             }
                         });
@@ -294,20 +299,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             public void onClick(View v) {
                 Intent intent = new Intent(v.getContext(), AddRecipeActivity.class);
                 intent.putExtra("recipeId", recipeId);
-                /*
-                intent.putExtra("title", recipe.getTitle());
-                intent.putExtra("description", recipe.getDescription());
-                intent.putExtra("category", recipe.getCategory());
-
-                List<Integer> imageData = recipe.getImageData();
-                if (imageData != null && !imageData.isEmpty()) {
-                    byte[] imageBytes = new byte[imageData.size()];
-                    for (int i = 0; i < imageData.size(); i++) {
-                        imageBytes[i] = imageData.get(i).byteValue(); // <-- המרה נכונה
-                    }
-                    intent.putExtra("imageData", imageBytes);
-                }
-                 */
                 v.getContext().startActivity(intent);
             }
         });
@@ -324,12 +315,18 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot qs) {
-                        FBRef.FBFS.runBatch(new WriteBatch.Function() {
+                        // מחיקת כל ההתייחסויות השמורות למתכון זה (Batch Write)
+                        if (qs.isEmpty()) return;
+
+                        WriteBatch batch = FBRef.FBFS.batch();
+                        for (DocumentSnapshot doc : qs.getDocuments()) {
+                            batch.delete(doc.getReference());
+                        }
+
+                        batch.commit().addOnFailureListener(new OnFailureListener() {
                             @Override
-                            public void apply(@NonNull WriteBatch batch) {
-                                for (DocumentSnapshot doc : qs.getDocuments()) {
-                                    batch.delete(doc.getReference());
-                                }
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(context, "Error removing saved refs: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -338,7 +335,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Toast.makeText(context,
-                                "שגיאה: " + e.getMessage(),
+                                "Error: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
@@ -350,7 +347,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         ImageView image;
         ImageView saveButton;
         ImageView deleteButton;
-        ImageView editButton; // <-- כפתור עריכה
+        ImageView editButton;
         ImageView buttonShare;
         TextView title;
         TextView description;
@@ -373,18 +370,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
     }
 
-    // פונקציה לעדכון פריט בודד ב-adapter
     public void updateRecipeInList(Recipe updatedRecipe) {
         if (updatedRecipe == null || updatedRecipe.getRecipeId() == null)
             return;
-        int position = findRecipePosition(updatedRecipe.getRecipeId()); // חפש את המיקום של המתכון ברשימה
+        int position = findRecipePosition(updatedRecipe.getRecipeId());
         if (position != -1) {
-            recipeList.set(position, updatedRecipe); // עדכון המתכון ברשימה
-            notifyItemChanged(position); // עדכון התצוגה
+            recipeList.set(position, updatedRecipe);
+            notifyItemChanged(position);
         }
     }
 
-    // פונקציה למציאת המיקום של המתכון ברשימה
     private int findRecipePosition(String recipeId) {
         if (recipeId == null || recipeList == null)
             return -1;
@@ -399,6 +394,4 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
         return -1;
     }
-
-
 }

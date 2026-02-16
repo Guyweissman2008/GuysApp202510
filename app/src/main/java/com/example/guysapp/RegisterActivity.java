@@ -15,7 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.google.firebase.auth.UserProfileChangeRequest;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -25,8 +25,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseUser;
@@ -110,7 +108,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
 
-        // מעבר למסך התחברות
+        // Navigate to Login screen
         goToLoginText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -146,7 +144,7 @@ public class RegisterActivity extends AppCompatActivity {
                                     openCamera();
                                 } else {
                                     Toast.makeText(RegisterActivity.this,
-                                            "הרשאת מצלמה דרושה כדי לצלם תמונה",
+                                            "Camera permission is required to take a photo",
                                             Toast.LENGTH_SHORT).show();
                                 }
                             }
@@ -207,15 +205,13 @@ public class RegisterActivity extends AppCompatActivity {
             selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
             imageViewProfile.setImageBitmap(selectedBitmap);
         } catch (IOException e) {
-            Toast.makeText(this, "לא ניתן לטעון את התמונה", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void registerUser() {
         String firstName = firstNameEditText.getText().toString().trim();
-
         String lastName = lastNameEditText.getText().toString().trim();
-
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString();
         String confirmPassword = confirmPasswordEditText.getText().toString();
@@ -223,18 +219,18 @@ public class RegisterActivity extends AppCompatActivity {
         if (firstName.isEmpty() || lastName.isEmpty()
                 || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
 
-            Toast.makeText(this, "יש למלא את כל השדות", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!password.equals(confirmPassword)) {
-            Toast.makeText(this, "הסיסמאות אינן תואמות", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             clearPasswords();
             return;
         }
 
         if (selectedBitmap == null) {
-            Toast.makeText(this, "בחר/י תמונת פרופיל", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please select a profile image", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -250,11 +246,10 @@ public class RegisterActivity extends AppCompatActivity {
                                         firstName,
                                         lastName,
                                         email
-
                                 );
                             }
                         } else {
-                            String errorMsg = "הרשמה נכשלה";
+                            String errorMsg = "Registration failed";
                             if (task.getException() != null) {
                                 errorMsg = task.getException().getMessage();
                             }
@@ -266,12 +261,7 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserWithImage(String userId,
-                                   String firstName,
-                                   String lastName,
-                                   String email
-    ) {
-
+    private void saveUserWithImage(String userId, String firstName, String lastName, String email) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
 
@@ -287,45 +277,42 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("email", email);
         userMap.put("imageData", byteList);
 
+        final String fullName = firstName + " " + lastName;
+
+        // 1. קודם כל שומרים ב-Firestore
         FBRef.refUsers.document(userId)
                 .set(userMap)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
-                            Toast.makeText(RegisterActivity.this, "ההרשמה הצליחה", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
-                            finish();
-                        } else {
-                            // בעיה בשמירה ב-Firestore
-                            String errorMsg = "שגיאה בשמירת פרטי המשתמש";
-                            if (task.getException() != null) {
-                                errorMsg = task.getException().getMessage();
+                            // 2. אם השמירה ב-Firestore הצליחה, מנסים לעדכן את השם ב-Auth
+                            FirebaseUser user = FBRef.mAuth.getCurrentUser();
+                            if (user != null) {
+                                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                        .setDisplayName(fullName)
+                                        .build();
+
+                                user.updateProfile(profileUpdates)
+                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> updateTask) {
+                                                // גם אם עדכון השם נכשל וגם אם הצליח - אנחנו ממשיכים לבית
+                                                // כי המשתמש כבר נוצר ונשמר ב-Database
+                                                Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
+                                                startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                finish();
+                                            }
+                                        });
                             }
+                        } else {
+                            // טיפול בשגיאה בשמירה ב-Firestore
+                            String errorMsg = task.getException() != null ? task.getException().getMessage() : "Error saving user details";
                             Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
 
-                            // מחיקת המשתמש מ-FirebaseAuth
+                            // אם השמירה ב-Database נכשלה, מוחקים את המשתמש כדי שלא ייווצר "חצי משתמש"
                             FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-                            if (currentUser == null) {
-                                return;
-                            }
-
-                            currentUser.delete()
-                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            if (!task.isSuccessful()) {
-                                                String errorMsg = "שגיאה במחיקת המשתמש אחרי תקלה";
-                                                if (task.getException() != null &&
-                                                        task.getException().getMessage() != null) {
-                                                    errorMsg = task.getException().getMessage();
-                                                }
-                                                Toast.makeText(RegisterActivity.this,
-                                                        errorMsg,
-                                                        Toast.LENGTH_LONG).show();
-                                            }
-                                        }
-                                    });
+                            if (currentUser != null) currentUser.delete();
                         }
                     }
                 });

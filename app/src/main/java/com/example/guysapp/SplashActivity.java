@@ -16,24 +16,29 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        // טיימר של 3 שניות (3000 מילי-שניות)
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 FirebaseUser user = FBRef.mAuth.getCurrentUser();
-                // בדיקה : לאן להעביר את המשתמש?
+
                 if (user != null) {
+                    // ניסיון לקחת את השם המלא
+                    String name = user.getDisplayName();
+
+                    // בדיקה: אם השם ריק או לא קיים, נשתמש במייל כגיבוי
+                    if (name == null || name.isEmpty()) {
+                        name = user.getEmail();
+                    }
+
                     Toast.makeText(SplashActivity.this,
-                            "כיף שחזרת, " + user.getEmail(),
+                            "Welcome back, " + name,
                             Toast.LENGTH_SHORT).show();
-                    // אם המשתמש כבר מחובר - ישר למסך הבית
+
                     startActivity(new Intent(SplashActivity.this, HomeActivity.class));
                 } else {
-                    // אם לא מחובר - למסך ההתחברות
                     startActivity(new Intent(SplashActivity.this, LoginActivity.class));
                 }
 
-                // סגירת מסך הפתיחה כדי שלא יחזרו אליו בלחיצה על Back
                 finish();
             }
         }, 3000);
