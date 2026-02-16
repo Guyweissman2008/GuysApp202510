@@ -67,13 +67,13 @@ public class BaseActivity extends AppCompatActivity {
 
     private void updateTitleBySelectedItem(int selectedItemId) {
         if (selectedItemId == R.id.nav_home) {
-            setTitle("בית");
+            setTitle("Home");
         } else if (selectedItemId == R.id.nav_add) {
-            setTitle("הוסף");
+            setTitle("Add Recipe");
         } else if (selectedItemId == R.id.nav_profile) {
-            setTitle("פרופיל");
+            setTitle("Profile");
         } else if (selectedItemId == R.id.nav_logout) {
-            setTitle("התנתק");
+            setTitle("Logout");
         }
     }
 
