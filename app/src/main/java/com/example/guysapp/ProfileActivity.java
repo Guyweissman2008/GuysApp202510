@@ -14,14 +14,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Intent;
-
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseUser;
@@ -31,14 +29,12 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class ProfileActivity extends BaseActivity {
-
     // UI
     private ImageView profileImage;
     private TextView tvFullName;
@@ -52,13 +48,12 @@ public class ProfileActivity extends BaseActivity {
 
     private androidx.activity.result.ActivityResultLauncher<android.content.Intent> imagePickerLauncher;
     private RecipeAdapter adapter;
-    private List<Recipe> myRecipes;
-    private List<Recipe> savedRecipes;
+    private List<Recipe> myRecipes;// רשימת המתכונים שהמשתמש יצר
+    private List<Recipe> savedRecipes;// רשימת המתכונים שהמשתמש שמר מאחרים
 
     private boolean showingMyRecipes;
-
+    //  מאזינים לכל מסמך מתכון שמור
     private final java.util.Map<String, ListenerRegistration> savedRecipeDocListeners = new java.util.HashMap<>();
-
     private ListenerRegistration myRecipesListener;
     private ListenerRegistration savedRecipesListener;
     private ListenerRegistration savedRecipeIdsForHeartsListener;
@@ -87,20 +82,17 @@ public class ProfileActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        loadUserProfile();
+        loadUserProfile();// טעינת נתוני המשתמש והמתכונים בכל פעם שהמסך עולה
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-
         removeListener(myRecipesListener);      // מתכונים שלי (refRecipes לפי userId)
         removeListener(savedRecipesListener);   // רשימת השמורים (refSavedRecipes)
         removeListener(savedRecipeIdsForHeartsListener); // IDs של שמורים בשביל לבבות
-
         for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
-            removeListener(lr);                 // מאזין לכל מתכון שמור (refRecipes/{recipeId})
+            removeListener(lr);                 // מאזין לכל מתכון שמור
         }
         savedRecipeDocListeners.clear();
     }
@@ -181,7 +173,7 @@ public class ProfileActivity extends BaseActivity {
     private void loadUserProfile() {
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
         if (currentUser == null) {
-            Toast.makeText(this, "אין משתמש מחובר", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -216,7 +208,7 @@ public class ProfileActivity extends BaseActivity {
                     public void onFailure(@NonNull Exception e) {
                         setLoading(false);
                         Toast.makeText(ProfileActivity.this,
-                                "שגיאה בטעינת הפרופיל",
+                                "Error loading profile",
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -458,7 +450,7 @@ public class ProfileActivity extends BaseActivity {
     private void showEditProfileDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("עריכת פרופיל");
+        builder.setTitle("Edit Profile");
 
         tempSelectedImageUri = null;
 
@@ -489,15 +481,15 @@ public class ProfileActivity extends BaseActivity {
         layout.addView(dialogProfileImageView);
 
         TextView clickToChange = new TextView(this);
-        clickToChange.setText("לחצי על התמונה כדי לשנות");
+        clickToChange.setText("Tap image to change");
         clickToChange.setGravity(Gravity.CENTER);
         layout.addView(clickToChange);
 
         final EditText inputFirstName = new EditText(this);
-        inputFirstName.setHint("שם פרטי");
+        inputFirstName.setHint("first name");
 
         final EditText inputLastName = new EditText(this);
-        inputLastName.setHint("שם משפחה");
+        inputLastName.setHint("last name");
 
         fillNameFromTextView(inputFirstName, inputLastName);
 
@@ -506,9 +498,9 @@ public class ProfileActivity extends BaseActivity {
 
         builder.setView(layout);
 
-        builder.setPositiveButton("שמור שינויים", null);
+        builder.setPositiveButton("save", null);
 
-        builder.setNegativeButton("ביטול", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
@@ -526,7 +518,7 @@ public class ProfileActivity extends BaseActivity {
                 String newLast = inputLastName.getText().toString().trim();
 
                 if (newFirst.isEmpty() || newLast.isEmpty()) {
-                    Toast.makeText(ProfileActivity.this, "יש למלא שם מלא", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ProfileActivity.this, "Please enter your full name", Toast.LENGTH_SHORT).show();
                     return; // הדיאלוג לא ייסגר
                 }
 
@@ -535,7 +527,7 @@ public class ProfileActivity extends BaseActivity {
         });
     }
 
-    //TODO
+    //אני מפרידה שוב את השם המלא כדי לאפשר למשתמש לערוך רק אחד מהם,מתי שהדיאלוג נפתח.
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
         String currentFullName = tvFullName.getText().toString().trim();
         if (currentFullName.isEmpty())
@@ -553,12 +545,9 @@ public class ProfileActivity extends BaseActivity {
             etLastName.setText(lastNameBuilder.toString().trim());
         }
     }
-
-
+    // שליפת הטקסט שהמשתמש הקליד ושליחה לפונקציית השמירה בפיירבייס
     private void saveProfileChanges(String firstName, String lastName, AlertDialog dialog, Button btnSave) {
-
         setSavingState(true, btnSave);
-
         FirebaseUser user = FBRef.mAuth.getCurrentUser();
         if (user == null) {
             Toast.makeText(this, "אין משתמש מחובר", Toast.LENGTH_SHORT).show();
@@ -566,9 +555,11 @@ public class ProfileActivity extends BaseActivity {
             return;
         }
         String userId = user.getUid();
+        // חיבור השם הפרטי ושם המשפחה למחרוזת אחת
         String fullName = firstName + " " + lastName;
 
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        //  לשמירה בפיירסור בשדות נפרדים כדי לשמור על סדר
         updates.put("firstName", firstName);
         updates.put("lastName", lastName);
 
@@ -577,7 +568,7 @@ public class ProfileActivity extends BaseActivity {
                 List<Integer> newImageData = processImageUri(tempSelectedImageUri);
                 updates.put("imageData", newImageData);
             } catch (Exception e) {
-                Toast.makeText(this, "התמונה גדולה מדי או לא נתמכת. נסו תמונה אחרת.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Image too large or not supported. Try another one.", Toast.LENGTH_SHORT).show();
                 resetDialogImageToCurrentProfile();
                 setSavingState(false, btnSave);
                 return;
@@ -628,7 +619,7 @@ public class ProfileActivity extends BaseActivity {
                         }
 
                         Toast.makeText(ProfileActivity.this,
-                                "שגיאה בשמירה. נסו שוב.",
+                                "Save failed. Please try again.",
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -685,7 +676,7 @@ public class ProfileActivity extends BaseActivity {
                     public void onFailure(@NonNull Exception e) {
                         ProfileActivity.this.setLoading(false);
                         Toast.makeText(ProfileActivity.this,
-                                "שגיאה בשליפת המתכונים שלי לעדכון: " + e.getMessage(),
+                                " failed. " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
@@ -704,7 +695,7 @@ public class ProfileActivity extends BaseActivity {
                         if (querySnapshot == null || querySnapshot.isEmpty()) {
                             setLoading(false);
                             Toast.makeText(ProfileActivity.this,
-                                    "הפרופיל עודכן בהצלחה!",
+                                    "Profile updated successfully",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }

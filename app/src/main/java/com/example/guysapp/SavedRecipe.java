@@ -5,7 +5,7 @@ public class SavedRecipe {
 
     private String userId;          // המשתמש ששמר את המתכון
     private String recipeId;        // המתכון המקורי
-    private String recipeOwnerId;   // המשתמש שיצר את המתכון (לתצוגה והרשאות)
+    private String recipeOwnerId;   // המשתמש שיצר את המתכון
 
     // חובה ל-Firestore
     public SavedRecipe() {

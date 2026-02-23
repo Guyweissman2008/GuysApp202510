@@ -117,7 +117,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
     }
-
+    // אתחול המנגנונים שמקבלים מידע מגלריה או מצלמה)
     private void initActivityResultLaunchers() {
 
         imageResultLauncher =
@@ -262,60 +262,82 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void saveUserWithImage(String userId, String firstName, String lastName, String email) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+        try {
+            // בדיקה בסיסית שהתמונה קיימת לפני שמתחילים
+            if (selectedBitmap == null) {
+                handleRollback("Please select a profile image");
+                return;
+            }
 
-        List<Integer> byteList = new ArrayList<>();
-        for (byte b : baos.toByteArray()) {
-            byteList.add(b & 0xFF);
-        }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
 
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("userId", userId);
-        userMap.put("firstName", firstName);
-        userMap.put("lastName", lastName);
-        userMap.put("email", email);
-        userMap.put("imageData", byteList);
+            List<Integer> byteList = new ArrayList<>();
+            for (byte b : baos.toByteArray()) {
+                byteList.add(b & 0xFF);
+            }
 
-        final String fullName = firstName + " " + lastName;
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", userId);
+            userMap.put("firstName", firstName);
+            userMap.put("lastName", lastName);
+            userMap.put("email", email);
+            userMap.put("imageData", byteList);
 
-        // 1. קודם כל שומרים ב-Firestore
-        FBRef.refUsers.document(userId)
-                .set(userMap)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            // 2. אם השמירה ב-Firestore הצליחה, מנסים לעדכן את השם ב-Auth
-                            FirebaseUser user = FBRef.mAuth.getCurrentUser();
-                            if (user != null) {
-                                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                        .setDisplayName(fullName)
-                                        .build();
+            final String fullName = firstName + " " + lastName;
 
-                                user.updateProfile(profileUpdates)
-                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<Void> updateTask) {
-                                                // גם אם עדכון השם נכשל וגם אם הצליח - אנחנו ממשיכים לבית
-                                                // כי המשתמש כבר נוצר ונשמר ב-Database
-                                                Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
-                                                startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
-                                                finish();
-                                            }
-                                        });
+            // 1. שמירה ב-Firestore
+            FBRef.refUsers.document(userId)
+                    .set(userMap)
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                // 2. עדכון שם ב-Authentication
+                                FirebaseUser user = FBRef.mAuth.getCurrentUser();
+                                if (user != null) {
+                                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                            .setDisplayName(fullName)
+                                            .build();
+
+                                    user.updateProfile(profileUpdates)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> updateTask) {
+                                                    Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
+                                                    startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                    finish();
+                                                }
+                                            });
+                                }
+                            } else {
+                                // אם השמירה ב-Firestore נכשלה
+                                String error = task.getException() != null ? task.getException().getMessage() : "Database error";
+                                handleRollback(error);
                             }
-                        } else {
-                            // טיפול בשגיאה בשמירה ב-Firestore
-                            String errorMsg = task.getException() != null ? task.getException().getMessage() : "Error saving user details";
-                            Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
-
-                            // אם השמירה ב-Database נכשלה, מוחקים את המשתמש כדי שלא ייווצר "חצי משתמש"
-                            FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-                            if (currentUser != null) currentUser.delete();
                         }
-                    }
-                });
+                    });
+
+        } catch (Exception e) {
+            // אם קרתה שגיאה בעיבוד התמונה (זיכרון מלא, פורמט לא תקין וכו')
+            handleRollback("Image error: " + e.getMessage());
+        }
+    }
+
+    // פונקציית העזר שדואגת למחוק את המשתמש מה-Auth אם משהו נכשל
+    private void handleRollback(String errorMsg) {
+        Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+
+        FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
+        if (currentUser != null) {
+            // מחיקת המשתמש מה-Authentication
+            currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    // המשתמש נמחק
+                }
+            });
+        }
     }
 
     private void clearPasswords() {
