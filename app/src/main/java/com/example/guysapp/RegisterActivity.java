@@ -5,16 +5,20 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -234,6 +238,8 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        //TODO
+        registerButton.setEnabled(false);
         FBRef.mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -256,10 +262,15 @@ public class RegisterActivity extends AppCompatActivity {
                             Toast.makeText(RegisterActivity.this,
                                     errorMsg,
                                     Toast.LENGTH_LONG).show();
+                            //TODO
+                            registerButton.setEnabled(true);
                         }
                     }
                 });
     }
+
+
+
 
     private void saveUserWithImage(String userId, String firstName, String lastName, String email) {
         try {
@@ -269,13 +280,27 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
 
+            Log.d("saveUserWithImage","saveUserWithImage start");
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+            ImageUtil.downscaleBitmap(selectedBitmap).compress(Bitmap.CompressFormat.JPEG, 80, baos);
+
+            Log.d("saveUserWithImage","saveUserWithImage 1");
+
+
+
+
 
             List<Integer> byteList = new ArrayList<>();
             for (byte b : baos.toByteArray()) {
                 byteList.add(b & 0xFF);
             }
+
+
+
+
+
+            Log.d("saveUserWithImage","saveUserWithImage 2");
 
             Map<String, Object> userMap = new HashMap<>();
             userMap.put("userId", userId);
@@ -286,6 +311,8 @@ public class RegisterActivity extends AppCompatActivity {
 
             final String fullName = firstName + " " + lastName;
 
+            Log.d("saveUserWithImage","saveUserWithImage 3");
+
             // 1. שמירה ב-Firestore
             FBRef.refUsers.document(userId)
                     .set(userMap)
@@ -293,6 +320,8 @@ public class RegisterActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
                             if (task.isSuccessful()) {
+                                Log.d("saveUserWithImage","saveUserWithImage success 4");
+
                                 // 2. עדכון שם ב-Authentication
                                 FirebaseUser user = FBRef.mAuth.getCurrentUser();
                                 if (user != null) {
@@ -304,6 +333,9 @@ public class RegisterActivity extends AppCompatActivity {
                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> updateTask) {
+                                                    Log.d("saveUserWithImage","saveUserWithImage  6");
+                                                    //TODO
+                                                    registerButton.setEnabled(true);
                                                     Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
                                                     startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
                                                     finish();
@@ -311,6 +343,7 @@ public class RegisterActivity extends AppCompatActivity {
                                             });
                                 }
                             } else {
+                                Log.d("saveUserWithImage","saveUserWithImage fail 5");
                                 // אם השמירה ב-Firestore נכשלה
                                 String error = task.getException() != null ? task.getException().getMessage() : "Database error";
                                 handleRollback(error);
@@ -324,20 +357,39 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
+
+
     // פונקציית העזר שדואגת למחוק את המשתמש מה-Auth אם משהו נכשל
     private void handleRollback(String errorMsg) {
+        Log.d("handleRollback",errorMsg);
         Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
 
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
+        Log.d("handleRollback",""+currentUser.getEmail().toString());
         if (currentUser != null) {
             // מחיקת המשתמש מה-Authentication
             currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                @Override
-                public void onComplete(@NonNull Task<Void> task) {
-                    // המשתמש נמחק
-                }
-            });
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            //TODO
+                            registerButton.setEnabled(true);
+                            if (task.isSuccessful()) {
+                                // המשתמש נמחק
+                                Toast.makeText(RegisterActivity.this, "OK", Toast.LENGTH_SHORT).show();
+                                Log.d("handleRollback", "המשתמש נמחק");
+                            }
+                            else {
+                                Exception e = task.getException();
+                                // המשתמש לא נמחק
+                                Toast.makeText(RegisterActivity.this, "ERROR", Toast.LENGTH_SHORT).show();
+                                Log.d("handleRollback",  "המשתמש לא נמחק" + " " + e.getMessage().toString());
+                            }
+                        }
+                    });
         }
+        else
+            //TODO
+            registerButton.setEnabled(true);
     }
 
     private void clearPasswords() {

@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -215,9 +216,12 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
+
+
         List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
         if (imageDataRaw == null || imageDataRaw.isEmpty())
             return;
+
 
         byte[] bytes = new byte[imageDataRaw.size()];
         for (int i = 0; i < imageDataRaw.size(); i++) {
@@ -231,6 +235,18 @@ public class ProfileActivity extends BaseActivity {
 
         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         profileImage.setImageBitmap(bitmap);
+
+
+        /*
+        String base64Code = documentSnapshot.getString("imageBase64");
+
+        if (base64Code != null && !base64Code.isEmpty()) {
+            byte[] decodedString = Base64.decode(base64Code, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            profileImage.setImageBitmap(bitmap);
+        }
+
+         */
     }
 
     private void setFullName(DocumentSnapshot documentSnapshot) {

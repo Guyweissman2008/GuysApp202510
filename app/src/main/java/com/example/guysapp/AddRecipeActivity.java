@@ -50,10 +50,7 @@ public class AddRecipeActivity extends BaseActivity {
     private Uri cameraImageUri = null;
     private String selectedCategory = "";
 
-    // Image compression settings
-    private static final int IMAGE_MAX_SIZE_PX = 450;
-    private static final int JPEG_QUALITY = 30;
-    private static final int MAX_IMAGE_BYTES = 500 * 1024;
+
 
     // --- Launchers for Camera and Gallery ---
 
@@ -207,7 +204,7 @@ public class AddRecipeActivity extends BaseActivity {
             return;
         }
 
-        List<Integer> imageDataList = processSelectedImage(selectedBitmap);
+        List<Integer> imageDataList = ImageUtil.processSelectedImage(this, selectedBitmap);
         if (imageDataList == null) {
             btnSave.setEnabled(true);
             return;
@@ -237,29 +234,8 @@ public class AddRecipeActivity extends BaseActivity {
         });
     }
 
-    @Nullable
-    private List<Integer> processSelectedImage(Bitmap bitmap) {
-        Bitmap downscaled = downscaleBitmap(bitmap);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        downscaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, baos);
-        byte[] bytes = baos.toByteArray();
 
-        if (bytes.length > MAX_IMAGE_BYTES) {
-            Toast.makeText(this, "Image is too large, please try another", Toast.LENGTH_LONG).show();
-            return null;
-        }
 
-        List<Integer> imageDataList = new ArrayList<>();
-        for (byte b : bytes) imageDataList.add(b & 0xFF);
-        return imageDataList;
-    }
-
-    private Bitmap downscaleBitmap(Bitmap original) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-        float ratio = Math.min((float) IMAGE_MAX_SIZE_PX / width, (float) IMAGE_MAX_SIZE_PX / height);
-        return Bitmap.createScaledBitmap(original, Math.round(width * ratio), Math.round(height * ratio), true);
-    }
 
     private void addNewRecipe(String title, String description, List<Integer> imageDataList,
                               String category, String userId, String username, String prepTime) {
