@@ -30,7 +30,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     private boolean showDelete = false;
     private boolean isSavedScreen = false;
     private Set<String> savedIds = new HashSet<>();
-
+    private boolean isAdmin = false;
     public RecipeAdapter(List<Recipe> recipeList) {
         this.recipeList = recipeList;
     }
@@ -41,6 +41,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     public void setShowDelete(boolean showDelete) {
         this.showDelete = showDelete;
+        notifyDataSetChanged();
     }
 
     public void setSavedScreen(boolean savedScreen) {
@@ -54,6 +55,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     public void updateList(List<Recipe> newRecipes) {
         this.recipeList = newRecipes;
+        notifyDataSetChanged();
+    }
+    public void setIsAdmin(boolean isAdmin) {
+        this.isAdmin = isAdmin;
         notifyDataSetChanged();
     }
 
@@ -233,13 +238,27 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                  String recipeId,
                                  Recipe recipe) {
 
-        boolean canDelete = showDelete
-                && currentUserID != null
+        String recipeOwnerId = (recipe != null) ? recipe.getUserId() : "null";
+
+        boolean isOwner = currentUserID != null
                 && recipe != null
                 && recipe.getUserId() != null
-                && currentUserID.equals(recipe.getUserId())
+                && currentUserID.equals(recipe.getUserId());
+
+        boolean canDelete = showDelete
                 && recipeId != null
-                && !recipeId.isEmpty();
+                && !recipeId.isEmpty()
+                && (isOwner || isAdmin);
+
+        // --- הדפסות למציאת הבעיה ---
+        android.util.Log.d("DeleteDebug", "--- בדיקת מתכון: " + (recipe != null ? recipe.getTitle() : "null") + " ---");
+        android.util.Log.d("DeleteDebug", "1. showDelete (האם מותר למחוק במסך?): " + showDelete);
+        android.util.Log.d("DeleteDebug", "2. currentUserID (המשתמש שמחובר): " + currentUserID);
+        android.util.Log.d("DeleteDebug", "3. recipeUserId (מי יצר את המתכון?): " + recipeOwnerId);
+        android.util.Log.d("DeleteDebug", "4. isOwner (האם זה אותו אדם?): " + isOwner);
+        android.util.Log.d("DeleteDebug", "5. isAdmin (האם הוא מנהל?): " + isAdmin);
+        android.util.Log.d("DeleteDebug", "--> התוצאה הסופית (canDelete): " + canDelete);
+        // ---------------------------
 
         if (!canDelete) {
             holder.deleteButton.setVisibility(View.GONE);
@@ -260,7 +279,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                             public void onSuccess(Void aVoid) {
                                 RecipeAdapter.this.deleteSavedReferencesForRecipe(v.getContext(), recipeId);
                                 Toast.makeText(v.getContext(),
-                                        "Recipe deleted", // תרגום
+                                        "Recipe deleted",
                                         Toast.LENGTH_SHORT).show();
                             }
                         })

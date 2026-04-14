@@ -10,7 +10,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-
+import com.google.firebase.firestore.DocumentSnapshot;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -58,6 +58,7 @@ public class HomeActivity extends BaseActivity {
         setupCategoryChips();
         setupListeners();
         setupBottomNavigation(R.id.nav_home);
+        checkUserRoleAndUpdateAdapter();
     }
 
     @Override
@@ -110,10 +111,42 @@ public class HomeActivity extends BaseActivity {
         // האדפטר מקבל רשימת מתכונים
         adapter = new RecipeAdapter(filteredRecipes);
         adapter.setSavedScreen(false);
-        adapter.setShowDelete(false);
+        adapter.setShowDelete(true);
         recyclerView.setAdapter(adapter);
     }
+    private void checkUserRoleAndUpdateAdapter() {
+        if (FBRef.mAuth.getCurrentUser() != null) {
+            String uid = FBRef.mAuth.getCurrentUser().getUid();
 
+            // מעדכנים את האדפטר ב-ID של המשתמש (לזיהוי הבעלים)
+            adapter.setCurrentUserID(uid);
+
+            // מחפשים את המשתמש לפי השדה userId במקום לפי שם המסמך
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("Users")
+                    .whereEqualTo("userId", uid) // <-- כאן הקסם קורה! סורקים לפי שדה
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        // בודקים אם חזרה תשובה ואם היא לא ריקה
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            // לוקחים את התוצאה הראשונה (אמור להיות רק משתמש אחד כזה)
+                            DocumentSnapshot documentSnapshot = queryDocumentSnapshots.getDocuments().get(0);
+                            String role = documentSnapshot.getString("role");
+                            boolean isAdmin = "admin".equals(role);
+
+                            Log.d("RoleCheck", "User found! Role is: " + role + " | isAdmin: " + isAdmin);
+
+                            // מעדכנים את האדפטר רק לגבי האם הוא אדמין
+                            adapter.setIsAdmin(isAdmin);
+                        } else {
+                            Log.d("RoleCheck", "User document not found in DB!");
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("HomeActivity", "Error getting user role", e);
+                    });
+        }
+    }
     private void setupListeners() {
         addRecipeButton.setOnClickListener(new View.OnClickListener() {
             @Override
