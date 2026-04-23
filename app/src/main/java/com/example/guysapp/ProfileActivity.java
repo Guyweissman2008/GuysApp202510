@@ -37,6 +37,8 @@ import java.util.Set;
 
 public class ProfileActivity extends BaseActivity {
     // UI
+    private Bitmap tempSelectedBitmap; // שומר את התמונה שצולמה
+    private androidx.activity.result.ActivityResultLauncher<android.content.Intent> cameraLauncher;
     private ImageView profileImage;
     private TextView tvFullName;
     private RecyclerView recyclerViewRecipes;
@@ -151,6 +153,7 @@ public class ProfileActivity extends BaseActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                             tempSelectedImageUri = result.getData().getData();
+                            tempSelectedBitmap = null; // איפוס התמונה מהמצלמה אם בחרנו מהגלריה
                             if (dialogProfileImageView != null && tempSelectedImageUri != null) {
                                 dialogProfileImageView.setImageURI(tempSelectedImageUri);
                             }
@@ -158,6 +161,47 @@ public class ProfileActivity extends BaseActivity {
                     }
                 }
         );
+
+        // הגדרת מקבל התוצאה מהמצלמה
+        cameraLauncher = registerForActivityResult(
+                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                            Bundle extras = result.getData().getExtras();
+                            if (extras != null) {
+                                tempSelectedBitmap = (Bitmap) extras.get("data");
+                                tempSelectedImageUri = null; // איפוס ה-URI אם צילמנו במצלמה
+                                if (dialogProfileImageView != null && tempSelectedBitmap != null) {
+                                    dialogProfileImageView.setImageBitmap(tempSelectedBitmap);
+                                }
+                            }
+                        }
+                    }
+                }
+        );
+    }
+    private void showImageSourceDialog() {
+        String[] options = {"בחר מהגלריה", "צלם תמונה"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("בחר מקור תמונה");
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) {
+                    openGallery();
+                } else if (which == 1) {
+                    openCamera();
+                }
+            }
+        });
+        builder.show();
+    }
+
+    private void openCamera() {
+        Intent takePictureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        cameraLauncher.launch(takePictureIntent);
     }
 
     private void openGallery() {
@@ -469,7 +513,7 @@ public class ProfileActivity extends BaseActivity {
         builder.setTitle("Edit Profile");
 
         tempSelectedImageUri = null;
-
+        tempSelectedBitmap = null;
         android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 10);
@@ -491,7 +535,7 @@ public class ProfileActivity extends BaseActivity {
         dialogProfileImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openGallery();
+                showImageSourceDialog(); // מפעיל את חלונית הבחירה
             }
         });
         layout.addView(dialogProfileImageView);
@@ -542,6 +586,18 @@ public class ProfileActivity extends BaseActivity {
             }
         });
     }
+    private List<Integer> processBitmap(Bitmap originalBitmap) {
+        Bitmap resizedBitmap = scaleBitmapDown(originalBitmap, 300);
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+        byte[] data = baos.toByteArray();
+
+        List<Integer> imageData = new ArrayList<>();
+        for (byte b : data) {
+            imageData.add(b & 0xFF);
+        }
+        return imageData;
+    }
 
     //אני מפרידה שוב את השם המלא כדי לאפשר למשתמש לערוך רק אחד מהם,מתי שהדיאלוג נפתח.
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
@@ -578,10 +634,14 @@ public class ProfileActivity extends BaseActivity {
         //  לשמירה בפיירסור בשדות נפרדים כדי לשמור על סדר
         updates.put("firstName", firstName);
         updates.put("lastName", lastName);
-
-        if (tempSelectedImageUri != null) {
+        if (tempSelectedImageUri != null || tempSelectedBitmap != null) {
             try {
-                List<Integer> newImageData = processImageUri(tempSelectedImageUri);
+                List<Integer> newImageData;
+                if (tempSelectedImageUri != null) {
+                    newImageData = processImageUri(tempSelectedImageUri);
+                } else {
+                    newImageData = processBitmap(tempSelectedBitmap);
+                }
                 updates.put("imageData", newImageData);
             } catch (Exception e) {
                 Toast.makeText(this, "Image too large or not supported. Try another one.", Toast.LENGTH_SHORT).show();
@@ -590,18 +650,20 @@ public class ProfileActivity extends BaseActivity {
                 return;
             }
         }
-
         FBRef.refUsers.document(userId).update(updates)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        // 1. עדכון הכותרת למעלה
                         tvFullName.setText(fullName);
 
+                        // ---> כאן שמים את הקוד <---
                         // 2. עדכון התמונה במסך (אם השתנתה)
                         if (tempSelectedImageUri != null) {
                             profileImage.setImageURI(tempSelectedImageUri);
+                        } else if (tempSelectedBitmap != null) {
+                            profileImage.setImageBitmap(tempSelectedBitmap);
                         }
+                        // -----------------------------
 
                         // --- התיקון: עדכון מיידי של הרשימה המקומית במסך הפרופיל ---
                         for (Recipe recipe : myRecipes) {
@@ -752,23 +814,8 @@ public class ProfileActivity extends BaseActivity {
 
     // פונקציית עזר להמרת התמונה לרשימה של מספרים (עבור פיירבייס)
     private List<Integer> processImageUri(android.net.Uri uri) throws java.io.IOException {
-        // 1. טעינת התמונה המקורית מהגלריה
         Bitmap originalBitmap = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-
-        // 2. הקטנת התמונה כדי שלא תהיה כבדה מדי (300x300 בערך)
-        Bitmap resizedBitmap = scaleBitmapDown(originalBitmap, 300);
-
-        // 3. דחיסה ל-JPG
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos); // איכות 70%
-        byte[] data = baos.toByteArray();
-
-        // 4. המרה ל-List<Integer>
-        List<Integer> imageData = new ArrayList<>();
-        for (byte b : data) {
-            imageData.add(b & 0xFF);
-        }
-        return imageData;
+        return processBitmap(originalBitmap);
     }
 
     // פונקציית עזר לחישוב הקטנת התמונה (שומרת על פרופורציות)
@@ -808,6 +855,7 @@ public class ProfileActivity extends BaseActivity {
     // Helper
     private void resetDialogImageToCurrentProfile() {
         tempSelectedImageUri = null;
+        tempSelectedBitmap = null; // הוספנו את זה
 
         if (dialogProfileImageView == null) return;
 
