@@ -2,38 +2,58 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"> <LinearLayout
-    android:id="@+id/top_bar"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="16dp"
-    android:gravity="center_vertical"
-    android:background="#FFFFFF"
-    app:layout_constraintTop_toTopOf="parent">
+    android:background="#FFFFFF">
 
-    <ImageButton
-        android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_arrow_back"
-        app:tint="#C7577C" />
+    <RelativeLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginTop="8dp"
+        android:background="#FFFFFF"
+        android:elevation="10dp"
+        android:paddingHorizontal="16dp"
+        android:translationZ="10dp"
+        app:layout_constraintBottom_toTopOf="@+id/scrollView2"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="0dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="Add New Recipe"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#333333" /> </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnBackk"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="30dp"
+            android:layout_marginBottom="-13dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#C7577C" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="82dp"
+            android:layout_marginBottom="-1dp"
+            android:layout_toEndOf="@id/btnBackk"
+            android:text="Add New Recipe"
+            android:textColor="#333333"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
 
     <ScrollView
+        android:id="@+id/scrollView2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintTop_toBottomOf="@id/top_bar">
 
@@ -46,10 +66,10 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp"
                 app:cardBackgroundColor="#FFFFFF"
-                android:layout_marginBottom="16dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <ImageView
                     android:id="@+id/image_recipe"
@@ -74,54 +94,54 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
                 android:text="Recipe Details"
                 android:textColor="#666666"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
+                android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/edit_recipe_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Recipe Title"
+                android:layout_marginBottom="12dp"
                 android:background="@android:drawable/edit_text"
                 android:backgroundTint="#EEEEEE"
+                android:hint="Recipe Title"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
                 android:textSize="16sp" />
 
             <EditText
                 android:id="@+id/edit_recipe_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Description &amp; Ingredients"
-                android:gravity="top"
-                android:inputType="textMultiLine"
-                android:lines="4"
+                android:layout_marginBottom="12dp"
                 android:background="@android:drawable/edit_text"
                 android:backgroundTint="#EEEEEE"
+                android:gravity="top"
+                android:hint="Description &amp; Ingredients"
+                android:inputType="textMultiLine"
+                android:lines="4"
                 android:padding="12dp"
-                android:layout_marginBottom="12dp"
                 android:textSize="16sp" />
 
             <Spinner
                 android:id="@+id/spinner_category"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:backgroundTint="#C7577C"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#C7577C" />
 
             <EditText
                 android:id="@+id/edit_prep_time"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Preparation Time (mins)"
-                android:inputType="number"
+                android:layout_marginBottom="24dp"
                 android:background="@android:drawable/edit_text"
                 android:backgroundTint="#EEEEEE"
+                android:hint="Preparation Time (mins)"
+                android:inputType="number"
                 android:padding="12dp"
-                android:layout_marginBottom="24dp"
                 android:textSize="16sp" />
 
             <Button
@@ -129,9 +149,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:text="SAVE RECIPE"
+                android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
                 app:backgroundTint="#C7577C"
                 app:cornerRadius="12dp" />
 

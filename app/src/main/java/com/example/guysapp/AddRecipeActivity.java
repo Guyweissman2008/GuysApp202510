@@ -43,7 +43,7 @@ public class AddRecipeActivity extends BaseActivity {
     private ImageView imageRecipe;
     private Spinner spinnerCategory;
     private Button btnSave, btnAddImage;
-    private ImageButton btnBack;
+    private ImageButton btnBackk;
 
     // Image state
     private Bitmap selectedBitmap = null;
@@ -98,9 +98,11 @@ public class AddRecipeActivity extends BaseActivity {
         spinnerCategory = findViewById(R.id.spinner_category);
         btnSave = findViewById(R.id.button_add_recipe);
         btnAddImage = findViewById(R.id.button_add_image);
-        btnBack = findViewById(R.id.btnBack);
+        btnBackk = findViewById(R.id.btnBackk);
         editPrepTime = findViewById(R.id.edit_prep_time);
+
     }
+
 
     private void setupCategorySpinner() {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -122,13 +124,26 @@ public class AddRecipeActivity extends BaseActivity {
 
     private void setupClickListeners() {
         // Open the dialog to choose between Camera or Gallery
-        btnAddImage.setOnClickListener(v -> showImageSourceDialog());
+        btnAddImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AddRecipeActivity.this.showImageSourceDialog();
+            }
+        });
 
-        btnSave.setOnClickListener(v -> saveOrUpdateRecipe());
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AddRecipeActivity.this.saveOrUpdateRecipe();
+            }
+        });
 
-        btnBack.setOnClickListener(v -> {
-            startActivity(new Intent(AddRecipeActivity.this, HomeActivity.class));
-            finish();
+        btnBackk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(AddRecipeActivity.this, "GGG", Toast.LENGTH_SHORT).show();
+                AddRecipeActivity.this.finish();
+            }
         });
     }
 
