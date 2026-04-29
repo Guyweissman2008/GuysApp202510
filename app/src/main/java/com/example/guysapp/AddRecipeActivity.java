@@ -1,7 +1,7 @@
 package com.example.guysapp;
-
 import android.Manifest;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -18,41 +18,27 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class AddRecipeActivity extends BaseActivity {
-
-    // UI Elements
     private EditText editTitle, editDescription, editPrepTime;
     private ImageView imageRecipe;
     private Spinner spinnerCategory;
     private Button btnSave, btnAddImage;
     private ImageButton btnBackk;
-
-    // Image state
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
     private String selectedCategory = "";
-
-
-
-    // --- Launchers for Camera and Gallery ---
 
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -60,29 +46,24 @@ public class AddRecipeActivity extends BaseActivity {
                     handleImage(result.getData().getData());
                 }
             });
-
     private final ActivityResultLauncher<String> requestCameraPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) openCamera();
                 else Toast.makeText(AddRecipeActivity.this, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show();
             });
-
     private final ActivityResultLauncher<Uri> cameraLauncher =
             registerForActivityResult(new ActivityResultContracts.TakePicture(), result -> {
                 if (result) handleImage(cameraImageUri);
             });
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
-
         setupBottomNavigation(R.id.nav_add);
         initViews();
         setupCategorySpinner();
         setupClickListeners();
-
-        // Check if we are editing an existing recipe
+        // בדיקה אם עדכון
         String recipeId = getIntent().getStringExtra("recipeId");
         if (recipeId != null && !recipeId.isEmpty()) {
             loadRecipeForEditing(recipeId);
@@ -102,14 +83,11 @@ public class AddRecipeActivity extends BaseActivity {
         editPrepTime = findViewById(R.id.edit_prep_time);
 
     }
-
-
     private void setupCategorySpinner() {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this, R.array.recipe_categories, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(adapter);
-
         spinnerCategory.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
@@ -121,49 +99,46 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
     }
-
     private void setupClickListeners() {
-        // Open the dialog to choose between Camera or Gallery
         btnAddImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 AddRecipeActivity.this.showImageSourceDialog();
             }
         });
-
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 AddRecipeActivity.this.saveOrUpdateRecipe();
             }
         });
-
         btnBackk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(AddRecipeActivity.this, "GGG", Toast.LENGTH_SHORT).show();
+                Toast.makeText(AddRecipeActivity.this, "back", Toast.LENGTH_SHORT).show();
                 AddRecipeActivity.this.finish();
             }
         });
     }
-
+    // דיאלוג לגלריה או מצלמה
     private void showImageSourceDialog() {
         String[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("Select Image Source");
-        builder.setItems(options, (dialog, which) -> {
-            if (which == 0) takePhoto();
-            else if (which == 1) pickImageFromGallery();
-            else dialog.dismiss();
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) AddRecipeActivity.this.takePhoto();
+                else if (which == 1) AddRecipeActivity.this.pickImageFromGallery();
+                else dialog.dismiss();
+            }
         });
         builder.show();
     }
-
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         pickImageLauncher.launch(intent);
     }
-
     private void takePhoto() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -173,19 +148,17 @@ public class AddRecipeActivity extends BaseActivity {
             openCamera();
         }
     }
-
     private void openCamera() {
         cameraImageUri = createImageUri();
         if (cameraImageUri != null) cameraLauncher.launch(cameraImageUri);
         else Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show();
     }
-
     private Uri createImageUri() {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "New Recipe Picture");
         return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
-
+    // כדי שיהיה אפשר לראות על המסך
     private void handleImage(Uri imageUri) {
         if (imageUri == null) return;
         try {
@@ -199,73 +172,73 @@ public class AddRecipeActivity extends BaseActivity {
             Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
         }
     }
-
     private void saveOrUpdateRecipe() {
-        btnSave.setEnabled(false);
-
+        btnSave.setEnabled(false);// נעילת הכפתור
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();
         String prepTime = editPrepTime.getText().toString().trim();
-
         if (title.isEmpty() || description.isEmpty() || selectedCategory.isEmpty() || prepTime.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-
         if (selectedBitmap == null) {
             Toast.makeText(this, "Please select an image", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-
+        // התמונה תיהיה רשימת מספרים כדי שתוכל להישמר
         List<Integer> imageDataList = ImageUtil.processSelectedImage(this, selectedBitmap);
         if (imageDataList == null) {
             btnSave.setEnabled(true);
             return;
         }
-
         if (FBRef.mAuth.getCurrentUser() == null) {
             Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-
+        // מביא את הנתונים של המשתמש
         String userId = FBRef.mAuth.getCurrentUser().getUid();
-        FBRef.refUsers.document(userId).get().addOnSuccessListener(documentSnapshot -> {
-            String firstName = documentSnapshot.getString("firstName");
-            String lastName = documentSnapshot.getString("lastName");
-            String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-
-            String recipeId = getIntent().getStringExtra("recipeId");
-            if (recipeId == null || recipeId.isEmpty()) {
-                addNewRecipe(title, description, imageDataList, selectedCategory, userId, username, prepTime);
-            } else {
-                updateRecipe(recipeId, title, description, imageDataList, selectedCategory, userId, username, prepTime);
+        FBRef.refUsers.document(userId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                String firstName = documentSnapshot.getString("firstName");
+                String lastName = documentSnapshot.getString("lastName");
+                String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+                String recipeId = AddRecipeActivity.this.getIntent().getStringExtra("recipeId");
+                if (recipeId == null || recipeId.isEmpty()) {
+                    AddRecipeActivity.this.addNewRecipe(title, description, imageDataList, selectedCategory, userId, username, prepTime);
+                } else {
+                    AddRecipeActivity.this.updateRecipe(recipeId, title, description, imageDataList, selectedCategory, userId, username, prepTime);
+                }
             }
-        }).addOnFailureListener(e -> {
-            Toast.makeText(AddRecipeActivity.this, "Error fetching user details", Toast.LENGTH_SHORT).show();
-            btnSave.setEnabled(true);
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(AddRecipeActivity.this, "Error fetching user details", Toast.LENGTH_SHORT).show();
+                btnSave.setEnabled(true);
+            }
         });
     }
-
-
-
-
     private void addNewRecipe(String title, String description, List<Integer> imageDataList,
                               String category, String userId, String username, String prepTime) {
         String docId = FBRef.refRecipes.document().getId();
         Recipe recipe = new Recipe(docId, title, description, imageDataList, category, username, userId, prepTime);
-
-        FBRef.refRecipes.document(docId).set(recipe).addOnSuccessListener(aVoid -> {
-            Toast.makeText(AddRecipeActivity.this, "Recipe Added!", Toast.LENGTH_SHORT).show();
-            finish();
-        }).addOnFailureListener(e -> {
-            Toast.makeText(AddRecipeActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            btnSave.setEnabled(true);
+        FBRef.refRecipes.document(docId).set(recipe).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(AddRecipeActivity.this, "Recipe Added!", Toast.LENGTH_SHORT).show();
+                AddRecipeActivity.this.finish();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(AddRecipeActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                btnSave.setEnabled(true);
+            }
         });
     }
-
     private void updateRecipe(String recipeId, String title, String description,
                               List<Integer> imageDataList, String category, String userId, String username, String prepTime) {
         FBRef.refRecipes.document(recipeId).update(
@@ -274,29 +247,31 @@ public class AddRecipeActivity extends BaseActivity {
                 "category", category,
                 "imageData", imageDataList,
                 "preparationTime", prepTime
-        ).addOnSuccessListener(aVoid -> {
-            Toast.makeText(AddRecipeActivity.this, "Recipe Updated!", Toast.LENGTH_SHORT).show();
-            finish();
-        }).addOnFailureListener(e -> {
-            Toast.makeText(AddRecipeActivity.this, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            btnSave.setEnabled(true);
+        ).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(AddRecipeActivity.this, "Recipe Updated!", Toast.LENGTH_SHORT).show();
+                AddRecipeActivity.this.finish();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(AddRecipeActivity.this, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                btnSave.setEnabled(true);
+            }
         });
     }
-
     private void loadRecipeForEditing(String recipeId) {
         FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(document -> {
             if (!document.exists()) return;
             Recipe recipe = document.toObject(Recipe.class);
             if (recipe == null) return;
-
             editTitle.setText(recipe.getTitle());
             editDescription.setText(recipe.getDescription());
             editPrepTime.setText(recipe.getPreparationTime());
             selectedCategory = recipe.getCategory();
-
             ArrayAdapter adapter = (ArrayAdapter) spinnerCategory.getAdapter();
             spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
-
             if (recipe.getImageData() != null) {
                 byte[] bytes = recipe.imageDataToBytes();
                 selectedBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);

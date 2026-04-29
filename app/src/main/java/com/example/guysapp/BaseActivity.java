@@ -1,44 +1,30 @@
 package com.example.guysapp;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
-
 public class BaseActivity extends AppCompatActivity {
-
     protected BottomNavigationView bottomNav;
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
-
     protected void setupBottomNavigation(int selectedItemId) {
-
         bottomNav = findViewById(R.id.bottom_navigation);
-
         if (bottomNav == null) {
             return;
         }
-
-        // להציג טקסט + אייקון
         bottomNav.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_LABELED);
         updateTitleBySelectedItem(selectedItemId);
-
         bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
                 int id = item.getItemId();
-
                 // אם לחצו על המסך הנוכחי לא עושים כלום
                 if (id == selectedItemId) {
                     return true;
@@ -64,7 +50,6 @@ public class BaseActivity extends AppCompatActivity {
         });
         bottomNav.setSelectedItemId(selectedItemId);
     }
-
     private void updateTitleBySelectedItem(int selectedItemId) {
         if (selectedItemId == R.id.nav_home) {
             setTitle("Home");
@@ -76,7 +61,6 @@ public class BaseActivity extends AppCompatActivity {
             setTitle("Logout");
         }
     }
-
     private void navigateTo(Class<?> destination) {
         startActivity(new Intent(this, destination));
         overridePendingTransition(0, 0);
@@ -86,11 +70,9 @@ public class BaseActivity extends AppCompatActivity {
     private void logoutUser() {
         FBRef.mAuth.signOut();
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
-
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-
         finish();
     }
 }
