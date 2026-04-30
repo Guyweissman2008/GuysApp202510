@@ -10,7 +10,10 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,15 +31,14 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import com.google.android.material.chip.ChipGroup;
 public class HomeActivity extends BaseActivity {
-
     private FloatingActionButton addRecipeButton;
     private RecyclerView recyclerView;
     private RecipeAdapter adapter;
     private List<Recipe> allRecipes;
     private List<Recipe> filteredRecipes;
-    private com.google.android.material.chip.ChipGroup chipGroup;
+    private ChipGroup chipGroup;
     private String selectedCategory;
     private EditText searchEditText;
     private FrameLayout progressOverlay;
@@ -49,9 +51,7 @@ public class HomeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
         selectedCategory = "All"; // קטגוריית ברירת מחדל
-
         initLists();
         initViews();
         setupRecyclerView();
@@ -60,7 +60,6 @@ public class HomeActivity extends BaseActivity {
         setupBottomNavigation(R.id.nav_home);
         checkUserRoleAndUpdateAdapter();
     }
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -71,17 +70,14 @@ public class HomeActivity extends BaseActivity {
         if (networkReceiver == null) {
             networkReceiver = new NetworkChangeReceiver();
         }
-        // יצירת פילטר שאומר "תקשיב לשינויים בחיבוריות"
+        // האזנה לשינוים באינטרנט
         android.content.IntentFilter filter = new android.content.IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION);
-        // רישום המאזין
         registerReceiver(networkReceiver, filter);
     }
-
     @Override
     protected void onStop() {
         super.onStop();
         clearRegistrations();
-
         if (networkReceiver != null) {
             try {
                 unregisterReceiver(networkReceiver);
@@ -90,131 +86,111 @@ public class HomeActivity extends BaseActivity {
             }
         }
     }
-
     private void initLists() {
         allRecipes = new ArrayList<>();
         filteredRecipes = new ArrayList<>();
         savedRecipeIds = new HashSet<>();
     }
-
     private void initViews() {
         addRecipeButton = findViewById(R.id.button_add_recipe);
         recyclerView = findViewById(R.id.recyclerView_recipes);
         searchEditText = findViewById(R.id.editText_search);
         progressOverlay = findViewById(R.id.progress_overlay);
-        btnTimer = findViewById(R.id.btn_kitchen_timer); //כפתור הטיימר
+        btnTimer = findViewById(R.id.btn_kitchen_timer);
     }
-
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        // האדפטר מקבל רשימת מתכונים
         adapter = new RecipeAdapter(filteredRecipes);
-        adapter.setSavedScreen(false);
-        adapter.setShowDelete(true);
+        adapter.setSavedScreen(false); // בשביל שיציג ת כל המתכונים
+        adapter.setShowDelete(true); // כדי שתיהיה אופצית מחיקה לאדמין
         recyclerView.setAdapter(adapter);
     }
     private void checkUserRoleAndUpdateAdapter() {
-        if (FBRef.mAuth.getCurrentUser() != null) {
-            String uid = FBRef.mAuth.getCurrentUser().getUid();
-
-            // מעדכנים את האדפטר ב-ID של המשתמש (לזיהוי הבעלים)
-            adapter.setCurrentUserID(uid);
-
-            // מחפשים את המשתמש לפי השדה userId במקום לפי שם המסמך
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                    .collection("Users")
-                    .whereEqualTo("userId", uid) // <-- כאן הקסם קורה! סורקים לפי שדה
-                    .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                        // בודקים אם חזרה תשובה ואם היא לא ריקה
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            // לוקחים את התוצאה הראשונה (אמור להיות רק משתמש אחד כזה)
-                            DocumentSnapshot documentSnapshot = queryDocumentSnapshots.getDocuments().get(0);
-                            String role = documentSnapshot.getString("role");
-                            boolean isAdmin = "admin".equals(role);
-
-                            Log.d("RoleCheck", "User found! Role is: " + role + " | isAdmin: " + isAdmin);
-
-                            // מעדכנים את האדפטר רק לגבי האם הוא אדמין
-                            adapter.setIsAdmin(isAdmin);
-                        } else {
-                            Log.d("RoleCheck", "User document not found in DB!");
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("HomeActivity", "Error getting user role", e);
-                    });
-        }
+    if (FBRef.mAuth.getCurrentUser() != null) {
+     String uid = FBRef.mAuth.getCurrentUser().getUid();
+     adapter.setCurrentUserID(uid);
+     com.google.firebase.firestore.FirebaseFirestore.getInstance()
+     .collection("Users")
+     .whereEqualTo("userId", uid)
+     .get()
+     .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+     @Override
+      public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+      if (!queryDocumentSnapshots.isEmpty()) {
+      DocumentSnapshot documentSnapshot = queryDocumentSnapshots.getDocuments().get(0);
+       String role = documentSnapshot.getString("role");
+       boolean isAdmin = "admin".equals(role);
+        Log.d("RoleCheck", "User found! Role is: " + role + " | isAdmin: " + isAdmin);
+         adapter.setIsAdmin(isAdmin);
+      } else {
+          Log.d("RoleCheck", "User document not found in DB!");
+      }
+     }
+     })
+     .addOnFailureListener(new OnFailureListener() {
+     @Override
+     public void onFailure(@NonNull Exception e) {
+     Log.e("HomeActivity", "Error getting user role", e);
+     }
+     });
+     }
     }
     private void setupListeners() {
-        addRecipeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class));
-            }
-        });
-
-        searchEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterRecipes(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) { }
-        });
-
-        // טיימר
-        if (btnTimer != null) {
-            btnTimer.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+    addRecipeButton.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+    startActivity(new Intent(HomeActivity.this, AddRecipeActivity.class));
+    }
+    });
+    searchEditText.addTextChangedListener(new TextWatcher() {
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+    filterRecipes(s.toString());
+    }
+    @Override
+    public void afterTextChanged(Editable s) { }
+    });
+    if (btnTimer != null) {
+    btnTimer.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
                     showTimerDialog();
                 }
-            });
-        }
+    });
     }
-
+    }
     private void showTimerDialog() {
-        // 1. יצירת שדה כתיבה
-        final EditText input = new EditText(HomeActivity.this);
-        input.setHint("e.g., 20");
-        input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
-
-        // 2. בניית הדיאלוג
-        AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
-        builder.setTitle("Set Timer (Minutes)");
-        builder.setView(input);
-
-        // 3. כפתור אישור
-        builder.setPositiveButton("Start", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                startTimerFromInput(input.getText().toString().trim());
-            }
-        });
-
-        // 4. כפתור ביטול
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+    final EditText input = new EditText(HomeActivity.this);
+    input.setHint("e.g., 20");
+    input.setInputType(InputType.TYPE_CLASS_NUMBER); // רק מספרים
+    // 2. בניית הדיאלוג
+    AlertDialog.Builder builder = new AlertDialog.Builder(HomeActivity.this);
+    builder.setTitle("Set Timer (Minutes)");
+    builder.setView(input);
+     // 3. כפתור אישור
+    builder.setPositiveButton("Start", new DialogInterface.OnClickListener() {
+    @Override
+    public void onClick(DialogInterface dialog, int which) {
+    startTimerFromInput(input.getText().toString().trim());
+    }
+    });
+    // 4. כפתור ביטול
+    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    @Override
+    public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
             }
-        });
-
-        builder.show();
+    });
+    builder.show();
     }
-
     private void startTimerFromInput(String minutesStr) {
-        if (minutesStr.isEmpty()) {
-            Toast.makeText(this, "Please enter time!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        int minutes;
+    if (minutesStr.isEmpty()) {
+    Toast.makeText(this, "Please enter time!", Toast.LENGTH_SHORT).show();
+    return;
+    }
+    int minutes;
         try {
             minutes = Integer.parseInt(minutesStr);
         } catch (Exception e) {
@@ -228,9 +204,7 @@ public class HomeActivity extends BaseActivity {
         } else {
             Toast.makeText(this, "⏰ Timer set for " + minutes + " minutes", Toast.LENGTH_SHORT).show();
         }
-
         final String timeText = minutes + " minutes"; // במקום "דקות"
-
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -395,13 +369,11 @@ public class HomeActivity extends BaseActivity {
         });
     }
     // מיון end
-
     private boolean isSaved(Recipe recipe) {
         if (recipe == null || recipe.getRecipeId() == null)
             return false;
         return savedRecipeIds.contains(recipe.getRecipeId());
     }
-
     private String safe(String s) {
         return s == null ? "" : s.trim().toLowerCase();
     }
@@ -411,18 +383,15 @@ public class HomeActivity extends BaseActivity {
         chipGroup.setSingleSelection(true);
         chipGroup.setSelectionRequired(true);
         chipGroup.removeAllViews();
-
         // רשימת הקטגוריות
         // ברירת המחדל - מתחילה ב"הכל"
         java.util.List<String> categoryList = new java.util.ArrayList<>();
         categoryList.add("All");
-
         // טעינת הקטגוריות מהקובץ strings.xml
         String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
         for (String cat : resourceCategories) {
             categoryList.add(cat);
         }
-
         // כפתורים
         for (String cat : categoryList) {
             com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
@@ -442,17 +411,13 @@ public class HomeActivity extends BaseActivity {
         chipGroup.setOnCheckedChangeListener(new com.google.android.material.chip.ChipGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(com.google.android.material.chip.ChipGroup group, int checkedId) {
-
                 com.google.android.material.chip.Chip checkedChip = group.findViewById(checkedId);
                 selectedCategory = (checkedChip != null) ? checkedChip.getText().toString() : "All";
-
                 Log.d("chipGroup.onCheckedChanged", "Selected Category: " + selectedCategory);
-
                 String currentSearchText = (searchEditText != null) ? searchEditText.getText().toString() : "";
                 filterRecipes(currentSearchText);
             }
         });
-
         // סימון ברירת מחדל של הכל ("הכל")
         if (chipGroup.getChildCount() > 0) {
             ((com.google.android.material.chip.Chip) chipGroup.getChildAt(0)).setChecked(true);

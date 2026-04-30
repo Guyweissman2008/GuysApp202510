@@ -66,7 +66,6 @@ public class BaseActivity extends AppCompatActivity {
         overridePendingTransition(0, 0);
         finish();
     }
-
     private void logoutUser() {
         FBRef.mAuth.signOut();
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
