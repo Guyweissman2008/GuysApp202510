@@ -1,11 +1,9 @@
 package com.example.guysapp;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.util.Base64;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -34,11 +32,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import java.util.Map;
+import java.util.HashMap;
+import androidx.activity.result.ActivityResultLauncher;
 public class ProfileActivity extends BaseActivity {
-    // UI
-    private Bitmap tempSelectedBitmap; // שומר את התמונה שצולמה
-    private androidx.activity.result.ActivityResultLauncher<android.content.Intent> cameraLauncher;
+    private Bitmap tempSelectedBitmap;
+    private ActivityResultLauncher<Intent> cameraLauncher;
     private ImageView profileImage;
     private TextView tvFullName;
     private RecyclerView recyclerViewRecipes;
@@ -48,46 +47,35 @@ public class ProfileActivity extends BaseActivity {
     private ImageView buttonEditProfile;
     private ImageView dialogProfileImageView;
     private android.net.Uri tempSelectedImageUri;
-
     private androidx.activity.result.ActivityResultLauncher<android.content.Intent> imagePickerLauncher;
     private RecipeAdapter adapter;
-    private List<Recipe> myRecipes;// רשימת המתכונים שהמשתמש יצר
-    private List<Recipe> savedRecipes;// רשימת המתכונים שהמשתמש שמר מאחרים
-
+    private List<Recipe> myRecipes;
+    private List<Recipe> savedRecipes;
     private boolean showingMyRecipes;
-    //  מאזינים לכל מסמך מתכון שמור
-    private final java.util.Map<String, ListenerRegistration> savedRecipeDocListeners = new java.util.HashMap<>();
-    private ListenerRegistration myRecipesListener;
+    private final Map<String, ListenerRegistration> savedRecipeDocListeners = new HashMap<>();    private ListenerRegistration myRecipesListener;
     private ListenerRegistration savedRecipesListener;
     private ListenerRegistration savedRecipeIdsForHeartsListener;
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
-
         showingMyRecipes = true;
-
         setupBottomNavigation(R.id.nav_profile);
-
         initLists();
         initViews();
         setupRecyclerView();
         setupListeners();
         initActivityResultLaunchers();
     }
-
     private void initLists() {
         myRecipes = new ArrayList<>();
         savedRecipes = new ArrayList<>();
     }
-
     @Override
     protected void onStart() {
         super.onStart();
         loadUserProfile();// טעינת נתוני המשתמש והמתכונים בכל פעם שהמסך עולה
     }
-
     @Override
     protected void onStop() {
         super.onStop();
@@ -260,37 +248,14 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-
-
         List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
-        if (imageDataRaw == null || imageDataRaw.isEmpty())
-            return;
 
+        // שימוש במחלקה החדשה כדי לפענח את התמונה
+        Bitmap bitmap = ImageUtils.decodeFirestoreData(imageDataRaw);
 
-        byte[] bytes = new byte[imageDataRaw.size()];
-        for (int i = 0; i < imageDataRaw.size(); i++) {
-            Object o = imageDataRaw.get(i);
-            int value;
-            if (o instanceof Long) value = ((Long) o).intValue();
-            else if (o instanceof Integer) value = (Integer) o;
-            else value = 0;
-            bytes[i] = (byte) (value & 0xFF);
-        }
-
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        profileImage.setImageBitmap(bitmap);
-
-
-        /*
-        String base64Code = documentSnapshot.getString("imageBase64");
-
-        if (base64Code != null && !base64Code.isEmpty()) {
-            byte[] decodedString = Base64.decode(base64Code, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        if (bitmap != null) {
             profileImage.setImageBitmap(bitmap);
         }
-
-         */
     }
 
     private void setFullName(DocumentSnapshot documentSnapshot) {
@@ -634,17 +599,20 @@ public class ProfileActivity extends BaseActivity {
         //  לשמירה בפיירסור בשדות נפרדים כדי לשמור על סדר
         updates.put("firstName", firstName);
         updates.put("lastName", lastName);
+        // בתוך saveProfileChanges...
         if (tempSelectedImageUri != null || tempSelectedBitmap != null) {
             try {
                 List<Integer> newImageData;
                 if (tempSelectedImageUri != null) {
-                    newImageData = processImageUri(tempSelectedImageUri);
+                    // שולחים את ה-ContentResolver כדי שהמחלקה תוכל לגשת לגלריה
+                    newImageData = ImageUtils.processUriToIntegerList(getContentResolver(), tempSelectedImageUri, 300);
                 } else {
-                    newImageData = processBitmap(tempSelectedBitmap);
+                    // שולחים את ה-Bitmap מהמצלמה
+                    newImageData = ImageUtils.processBitmapToIntegerList(tempSelectedBitmap, 300);
                 }
                 updates.put("imageData", newImageData);
             } catch (Exception e) {
-                Toast.makeText(this, "Image too large or not supported. Try another one.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Image processing failed", Toast.LENGTH_SHORT).show();
                 resetDialogImageToCurrentProfile();
                 setSavingState(false, btnSave);
                 return;
@@ -759,17 +727,12 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
-
-    // פונקציית עזר לעדכון מתכונים שמורים
-    // Updates author display name in SavedRecipes (field: "authorName")
     private void updateSavedRecipeAuthorNameInDatabase(String userId, String newFullName) {
-
         // כאן אנחנו מחפשים במסמכי SavedRecipes איפה שה-recipeOwnerId הוא המשתמש שלנו
         FBRef.refSavedRecipes.whereEqualTo("recipeOwnerId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot querySnapshot) {
-
                         if (querySnapshot == null || querySnapshot.isEmpty()) {
                             setLoading(false);
                             Toast.makeText(ProfileActivity.this,
@@ -777,7 +740,6 @@ public class ProfileActivity extends BaseActivity {
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
-
                         // אנו משתמשים ב-WriteBatch כדי לעשות הרבה עדכונים בבת אחת בצורה יעילה
                         WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
 
@@ -810,21 +772,15 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
-
-
-    // פונקציית עזר להמרת התמונה לרשימה של מספרים (עבור פיירבייס)
     private List<Integer> processImageUri(android.net.Uri uri) throws java.io.IOException {
         Bitmap originalBitmap = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
         return processBitmap(originalBitmap);
     }
-
-    // פונקציית עזר לחישוב הקטנת התמונה (שומרת על פרופורציות)
     private Bitmap scaleBitmapDown(Bitmap bitmap, int maxDimension) {
         int originalWidth = bitmap.getWidth();
         int originalHeight = bitmap.getHeight();
         int resizedWidth = maxDimension;
         int resizedHeight = maxDimension;
-
         if (originalHeight > originalWidth) {
             resizedHeight = maxDimension;
             resizedWidth = (int) (resizedHeight * (float) originalWidth / (float) originalHeight);
@@ -837,33 +793,23 @@ public class ProfileActivity extends BaseActivity {
         }
         return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
     }
-
-
-    // Helper
     private void setLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
-
-    // Helper
     private void setSavingState(boolean isSaving, Button btnSave) {
         setLoading(isSaving);
         if (btnSave != null) {
             btnSave.setEnabled(!isSaving);
         }
     }
-
-    // Helper
     private void resetDialogImageToCurrentProfile() {
         tempSelectedImageUri = null;
         tempSelectedBitmap = null; // הוספנו את זה
-
         if (dialogProfileImageView == null) return;
-
         if (profileImage.getDrawable() != null) {
             dialogProfileImageView.setImageDrawable(profileImage.getDrawable());
         } else {
             dialogProfileImageView.setImageResource(R.drawable.ic_launcher_background);
         }
     }
-
 }

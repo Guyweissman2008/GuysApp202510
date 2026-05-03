@@ -61,6 +61,7 @@ public class HomeActivity extends BaseActivity {
         setupListeners();
         setupBottomNavigation(R.id.nav_home);
         checkUserRoleAndUpdateAdapter();
+        NotificationHelper.createNotificationChannel(this);
     }
     @Override
     protected void onStart() {
@@ -207,9 +208,7 @@ public class HomeActivity extends BaseActivity {
      new Handler().postDelayed(new Runnable() {
      @Override
      public void run() {
-     NotificationHelper.showNotification(
-     HomeActivity.this,
-    "Food is Ready! ",
+     NotificationHelper.showNotification(HomeActivity.this, "Food is Ready! ",
      "Time is up! (" + timeText + "), check your recipe."
       );
       }
