@@ -336,36 +336,37 @@ public class HomeActivity extends BaseActivity {
     }
     private void setupCategoryChips() {
         chipGroup = findViewById(R.id.categories_chip_group);
-        chipGroup.setSingleSelection(true);//רק כפתור אחד כל פעם
-        chipGroup.setSelectionRequired(true);//תמיד משהו לחוץ
-        chipGroup.removeAllViews();//ניקוי
-        java.util.List<String> categoryList = new java.util.ArrayList<>();
+        chipGroup.setSingleSelection(true);
+        chipGroup.setSelectionRequired(true);
+        chipGroup.removeAllViews();
+        chipGroup.setOnCheckedChangeListener(null);
+        List<String> categoryList = new ArrayList<>();
         categoryList.add("All");
         String[] resourceCategories = getResources().getStringArray(R.array.recipe_categories);
-        for (String cat : resourceCategories) {
-            categoryList.add(cat);
+        Collections.addAll(categoryList, resourceCategories);
+        for (int i = 0; i < categoryList.size(); i++) {
+            String cat = categoryList.get(i);
+            ContextThemeWrapper styleWrapper = new ContextThemeWrapper(this, R.style.CategoryChipStyle);
+            Chip chip = new Chip(styleWrapper);
+            chip.setText(cat);
+            chip.setCheckable(true);
+            chip.setId(i);
+            chipGroup.addView(chip);
+            if (cat.equals("All")) {
+                chip.setChecked(true);
+            }
         }
-        for (String cat : categoryList) {
-         ContextThemeWrapper styleWrapper = new ContextThemeWrapper(this, R.style.CategoryChipStyle);
-         Chip chip = new Chip(styleWrapper);
-         chip.setText(cat);
-         chip.setId(View.generateViewId());
-         chipGroup.addView(chip);
-        }
-        chipGroup.setOnCheckedChangeListener(new com.google.android.material.chip.ChipGroup.OnCheckedChangeListener() {
+        chipGroup.setOnCheckedChangeListener(new ChipGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(ChipGroup group, int checkedId) {
                 Chip checkedChip = group.findViewById(checkedId);
-                selectedCategory = (checkedChip != null) ? checkedChip.getText().toString() : "All";
-                Log.d("chipGroup.onCheckedChanged", "Selected Category: " + selectedCategory);
-                String currentSearchText = (searchEditText != null) ? searchEditText.getText().toString() : "";
-                filterRecipes(currentSearchText);
+                if (checkedChip != null && checkedChip.isChecked()) {
+                    selectedCategory = checkedChip.getText().toString();
+                    Log.d("CategorySelection", "Selected: " + selectedCategory);
+                    String currentSearchText = (searchEditText != null) ? searchEditText.getText().toString() : "";
+                    filterRecipes(currentSearchText);
+                }
             }
         });
-        // סימון ברירת מחדל של הכל
-        if (chipGroup.getChildCount() > 0) {
-            ((Chip) chipGroup.getChildAt(0)).setChecked(true);
-            selectedCategory = "All";
-        }
     }
 }
