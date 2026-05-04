@@ -1,5 +1,7 @@
 package com.example.guysapp;
 
+import com.google.firebase.firestore.Blob;
+
 import java.util.List;
 
 public class Recipe {
@@ -8,17 +10,18 @@ public class Recipe {
     private String title;
     private String description;
     private String category;
-    private List<Integer> imageData;
+    private Blob imageData; // ׳ ׳©׳׳¨ ׳›-Blob ׳׳‘׳™׳¦׳•׳¢׳™׳ ׳˜׳•׳‘׳™׳
     private String username;
     private String userId;
     private String preparationTime;
-    // חובה ל-Firestore
+
+    // ׳—׳•׳‘׳” ׳-Firestore
     public Recipe() { }
 
     public Recipe(String recipeId,
                   String title,
                   String description,
-                  List<Integer> imageData,
+                  Blob imageData,
                   String category,
                   String username,
                   String userId,String preparationTime) {
@@ -58,12 +61,22 @@ public class Recipe {
         this.description = description;
     }
 
-    public List<Integer> getImageData() {
+    public Blob getImageData() {
         return imageData;
     }
 
-    public void setImageData(List<Integer> imageData) {
+    public void NEW_setImageData(Blob imageData) {
         this.imageData = imageData;
+    }
+    // ׳‘׳×׳•׳ Recipe.java
+    public void setImageData(Object imageData) {
+        if (imageData instanceof Blob) {
+            this.imageData = (Blob) imageData;
+        } else if (imageData instanceof List) {
+            // ׳׳ ׳–׳” List, ׳׳ ׳—׳ ׳• ׳ ׳”׳₪׳•׳ ׳׳•׳×׳• ׳-Blob ׳›׳“׳™ ׳©׳”׳׳•׳“׳ ׳™׳™׳©׳׳¨ ׳׳—׳™׳“
+            byte[] bytes = ImageHelper.listToByteArray((List<?>) imageData);
+            this.imageData = Blob.fromBytes(bytes);
+        }
     }
 
     public String getCategory() {
@@ -90,26 +103,19 @@ public class Recipe {
         this.userId = userId;
     }
 
-    // המרת List<Integer> ל-byte[] עבור Bitmap
-    public byte[] imageDataToBytes() {
-        if (imageData == null) {
-            return null;
-        }
-
-        byte[] bytes = new byte[imageData.size()];
-
-        for (int i = 0; i < imageData.size(); i++) {
-            Integer val = imageData.get(i);
-            bytes[i] = (val != null) ? val.byteValue() : 0;
-        }
-
-        return bytes;
-    }
     public String getPreparationTime() {
         return preparationTime;
     }
 
     public void setPreparationTime(String preparationTime) {
         this.preparationTime = preparationTime;
+    }
+
+    /**
+     * ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳¢׳–׳¨ ׳׳”׳׳¨׳× ׳”-Blob ׳׳׳¢׳¨׳ ׳‘׳×׳™׳ (׳¢׳‘׳•׳¨ Bitmap)
+     */
+    public byte[] imageDataToBytes() {
+        if (imageData == null) return null;
+        return imageData.toBytes(); // ׳₪׳•׳ ׳§׳¦׳™׳” ׳׳•׳‘׳ ׳™׳× ׳©׳ Firebase, ׳׳”׳™׳¨׳” ׳•׳™׳¢׳™׳׳”
     }
 }

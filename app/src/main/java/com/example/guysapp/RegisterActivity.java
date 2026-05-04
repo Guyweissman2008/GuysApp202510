@@ -121,7 +121,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
     }
-    // אתחול המנגנונים שמקבלים מידע מגלריה או מצלמה)
+    // ׳׳×׳—׳•׳ ׳”׳׳ ׳’׳ ׳•׳ ׳™׳ ׳©׳׳§׳‘׳׳™׳ ׳׳™׳“׳¢ ׳׳’׳׳¨׳™׳” ׳׳• ׳׳¦׳׳׳”)
     private void initActivityResultLaunchers() {
 
         imageResultLauncher =
@@ -189,26 +189,26 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
-        cameraImageUri = createImageUri();
+        cameraImageUri = ImageHelper.createImageUri(this, "Profile Picture", "User profile photo during registration");
         if (cameraImageUri != null) {
             cameraLauncher.launch(cameraImageUri);
+        } else {
+            Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private Uri createImageUri() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "TempPicture");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
-
-        return getContentResolver()
-                .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-    }
-
     private void loadBitmapFromUri(Uri uri) {
-        try {
-            selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+
+        if (uri == null) {
+            Toast.makeText(this, "Invalid image", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        selectedBitmap = ImageHelper.loadBitmapFromUri(this, uri);
+
+        if (selectedBitmap != null) {
             imageViewProfile.setImageBitmap(selectedBitmap);
-        } catch (IOException e) {
+        } else {
             Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
         }
     }
@@ -274,55 +274,34 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void saveUserWithImage(String userId, String firstName, String lastName, String email) {
         try {
-            // בדיקה בסיסית שהתמונה קיימת לפני שמתחילים
             if (selectedBitmap == null) {
                 handleRollback("Please select a profile image");
                 return;
             }
 
-            Log.d("saveUserWithImage","saveUserWithImage start");
+            // ---  ׳©׳™׳׳•׳© ׳‘-Blob---
+            com.google.firebase.firestore.Blob imageDataBlob = ImageHelper.bitmapToBlob(this, selectedBitmap, ImageHelper.SMALL_IMAGE);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageUtil.downscaleBitmap(selectedBitmap).compress(Bitmap.CompressFormat.JPEG, 80, baos);
-
-            Log.d("saveUserWithImage","saveUserWithImage 1");
-
-
-
-
-
-            List<Integer> byteList = new ArrayList<>();
-            for (byte b : baos.toByteArray()) {
-                byteList.add(b & 0xFF);
+            if (imageDataBlob == null) {
+                handleRollback("Failed to process image");
+                return;
             }
-
-
-
-
-
-            Log.d("saveUserWithImage","saveUserWithImage 2");
 
             Map<String, Object> userMap = new HashMap<>();
             userMap.put("userId", userId);
             userMap.put("firstName", firstName);
             userMap.put("lastName", lastName);
             userMap.put("email", email);
-            userMap.put("imageData", byteList);
+            userMap.put("imageData", imageDataBlob); // ׳©׳׳™׳¨׳” ׳›-Blob
 
             final String fullName = firstName + " " + lastName;
 
-            Log.d("saveUserWithImage","saveUserWithImage 3");
-
-            // 1. שמירה ב-Firestore
             FBRef.refUsers.document(userId)
                     .set(userMap)
                     .addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
                             if (task.isSuccessful()) {
-                                Log.d("saveUserWithImage","saveUserWithImage success 4");
-
-                                // 2. עדכון שם ב-Authentication
                                 FirebaseUser user = FBRef.mAuth.getCurrentUser();
                                 if (user != null) {
                                     UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
@@ -333,63 +312,73 @@ public class RegisterActivity extends AppCompatActivity {
                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
                                                 public void onComplete(@NonNull Task<Void> updateTask) {
-                                                    Log.d("saveUserWithImage","saveUserWithImage  6");
-                                                    //TODO
+
+                                                    // ׳©׳—׳¨׳•׳¨ ׳–׳™׳›׳¨׳•׳
+                                                    selectedBitmap = null;
+
                                                     registerButton.setEnabled(true);
                                                     Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
-                                                    startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
-                                                    finish();
+                                                    RegisterActivity.this.startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                                                    RegisterActivity.this.finish();
                                                 }
                                             });
                                 }
                             } else {
-                                Log.d("saveUserWithImage","saveUserWithImage fail 5");
-                                // אם השמירה ב-Firestore נכשלה
                                 String error = task.getException() != null ? task.getException().getMessage() : "Database error";
-                                handleRollback(error);
+                                RegisterActivity.this.handleRollback(error);
                             }
                         }
                     });
 
         } catch (Exception e) {
-            // אם קרתה שגיאה בעיבוד התמונה (זיכרון מלא, פורמט לא תקין וכו')
             handleRollback("Image error: " + e.getMessage());
         }
     }
 
 
 
-    // פונקציית העזר שדואגת למחוק את המשתמש מה-Auth אם משהו נכשל
+    // ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳”׳¢׳–׳¨ ׳©׳“׳•׳׳’׳× ׳׳׳—׳•׳§ ׳׳× ׳”׳׳©׳×׳׳© ׳׳”-Auth ׳׳ ׳׳©׳”׳• ׳ ׳›׳©׳
     private void handleRollback(String errorMsg) {
         Log.d("handleRollback",errorMsg);
         Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
 
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
-        Log.d("handleRollback",""+currentUser.getEmail().toString());
+
+
+        String email = null;
+
         if (currentUser != null) {
-            // מחיקת המשתמש מה-Authentication
-            currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            //TODO
-                            registerButton.setEnabled(true);
-                            if (task.isSuccessful()) {
-                                // המשתמש נמחק
-                                Toast.makeText(RegisterActivity.this, "OK", Toast.LENGTH_SHORT).show();
-                                Log.d("handleRollback", "המשתמש נמחק");
-                            }
-                            else {
-                                Exception e = task.getException();
-                                // המשתמש לא נמחק
-                                Toast.makeText(RegisterActivity.this, "ERROR", Toast.LENGTH_SHORT).show();
-                                Log.d("handleRollback",  "המשתמש לא נמחק" + " " + e.getMessage().toString());
-                            }
-                        }
-                    });
+            email = currentUser.getEmail();
         }
-        else
+
+        // if (email != mull) return email else return "no email"
+        Log.d("handleRollback", email != null ? email : "no email");
+
+        if (currentUser != null) {
+            // ׳׳—׳™׳§׳× ׳”׳׳©׳×׳׳© ׳׳”-Authentication
+            currentUser.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    //TODO
+                    registerButton.setEnabled(true);
+                    if (task.isSuccessful()) {
+                        // ׳”׳׳©׳×׳׳© ׳ ׳׳—׳§
+                        Toast.makeText(RegisterActivity.this, "OK", Toast.LENGTH_SHORT).show();
+                        Log.d("handleRollback", "׳”׳׳©׳×׳׳© ׳ ׳׳—׳§");
+                    }
+                    else {
+                        Exception e = task.getException();
+                        // ׳”׳׳©׳×׳׳© ׳׳ ׳ ׳׳—׳§
+                        Toast.makeText(RegisterActivity.this, "ERROR", Toast.LENGTH_SHORT).show();
+                        Log.d("handleRollback",  "׳”׳׳©׳×׳׳© ׳׳ ׳ ׳׳—׳§" + " " + e.getMessage().toString());
+                    }
+                }
+            });
+        }
+        else {
             //TODO
             registerButton.setEnabled(true);
+        }
     }
 
     private void clearPasswords() {

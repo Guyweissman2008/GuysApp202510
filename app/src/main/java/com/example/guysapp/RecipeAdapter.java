@@ -78,14 +78,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
         String recipeId = recipe.getRecipeId();
 
-        // כותרת ותיאור
+        // ׳›׳•׳×׳¨׳× ׳•׳×׳™׳׳•׳¨
         holder.title.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
         holder.description.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
 
-        // קטגוריה (Category)
+        // ׳§׳˜׳’׳•׳¨׳™׳” (Category)
         holder.category.setText("Category: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
 
-        // מחבר (Uploaded by)
+        // ׳׳—׳‘׳¨ (Uploaded by)
         String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "Anonymous";
         holder.username.setText("Uploaded by: " + displayAuthor);
 
@@ -95,7 +95,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         bindDeleteClick(holder, recipeId, recipe);
         bindEditClick(holder, recipeId, recipe);
 
-        // זמן הכנה (mins)
+        // ׳–׳׳ ׳”׳›׳ ׳” (mins)
         if (recipe.getPreparationTime() != null && !recipe.getPreparationTime().isEmpty()) {
             holder.textPrepTime.setText(recipe.getPreparationTime() + " mins");
             holder.textPrepTime.setVisibility(View.VISIBLE);
@@ -103,11 +103,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             holder.textPrepTime.setVisibility(View.GONE);
         }
 
-        // כפתור שיתוף (Share)
+        // ׳›׳₪׳×׳•׳¨ ׳©׳™׳×׳•׳£ (Share)
         holder.buttonShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // הודעת השיתוף באנגלית
+                // ׳”׳•׳“׳¢׳× ׳”׳©׳™׳×׳•׳£ ׳‘׳׳ ׳’׳׳™׳×
                 String shareBody = "Hey! check out this great recipe: \n\n" +
                         "Recipe Name: " + recipe.getTitle() + "\n" +
                         "Category: " + recipe.getCategory() + "\n\n" +
@@ -130,15 +130,52 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     private void bindImage(@NonNull RecipeViewHolder holder, Recipe recipe) {
-        if (recipe.getImageData() != null && !recipe.getImageData().isEmpty()) {
+        if (recipe == null || recipe.getImageData() == null) {
+            holder.image.setImageResource(R.mipmap.ic_launcher_round);
+            return;
+        }
+
+        Object imageData = recipe.getImageData();
+
+        // ׳”׳’׳ ׳”: ׳׳ ׳–׳” ׳¨׳©׳™׳׳” (׳”׳₪׳•׳¨׳׳˜ ׳”׳™׳©׳ ׳•׳”׳›׳‘׳“), ׳₪׳©׳•׳˜ ׳ ׳©׳™׳ ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳•׳׳ ׳ ׳˜׳¢׳ ׳׳–׳™׳›׳¨׳•׳
+        if (imageData instanceof java.util.List) {
+            holder.image.setImageResource(R.mipmap.ic_launcher_round);
+            android.util.Log.w("RecipeAdapter", "Skipping heavy legacy List data for: " + recipe.getTitle());
+            return;
+        }
+
+        // ׳¨׳§ ׳׳ ׳–׳” Blob (׳”׳₪׳•׳¨׳׳˜ ׳”׳—׳“׳© ׳•׳”׳™׳¢׳™׳) ׳ ׳׳©׳™׳ ׳׳₪׳¢׳ ׳•׳—
+        if (imageData instanceof com.google.firebase.firestore.Blob) {
             try {
-                byte[] bytes = recipe.imageDataToBytes();
-                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                holder.image.setImageBitmap(bitmap);
+                Bitmap bitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageData);
+                if (bitmap != null) {
+                    holder.image.setImageBitmap(bitmap);
+                }
             } catch (Exception e) {
                 holder.image.setImageResource(R.mipmap.ic_launcher_round);
             }
+        }
+    }
+
+    private void NEW_bindImage(@NonNull RecipeViewHolder holder, Recipe recipe) {
+        // ׳‘׳“׳™׳§׳” ׳”׳׳ ׳§׳™׳™׳ ׳׳™׳“׳¢ ׳‘׳™׳ ׳׳¨׳™ (Blob)
+        if (recipe != null && recipe.getImageData() != null) {
+            try {
+                // ׳©׳™׳׳•׳© ׳‘-Helper ׳”׳—׳“׳© ׳׳₪׳¢׳ ׳•׳— ׳׳”׳™׳¨ ׳©׳ Blob ׳-Bitmap
+                Bitmap bitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
+
+                if (bitmap != null) {
+                    holder.image.setImageBitmap(bitmap);
+                } else {
+                    // ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳ ׳”׳₪׳¢׳ ׳•׳— ׳ ׳›׳©׳
+                    holder.image.setImageResource(R.mipmap.ic_launcher_round);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("RecipeAdapter", "Error decoding image: " + e.getMessage());
+                holder.image.setImageResource(R.mipmap.ic_launcher_round);
+            }
         } else {
+            // ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳ ׳׳™׳ ׳×׳׳•׳ ׳” ׳›׳׳
             holder.image.setImageResource(R.mipmap.ic_launcher_round);
         }
     }
@@ -171,13 +208,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 String uid = FBRef.mAuth.getCurrentUser().getUid();
                 String docId = buildSavedDocId(uid, recipeId);
 
-                // נסיון לקרוא אם המסמך קיים (האם כבר שמור?)
+                // ׳ ׳¡׳™׳•׳ ׳׳§׳¨׳•׳ ׳׳ ׳”׳׳¡׳׳ ׳§׳™׳™׳ (׳”׳׳ ׳›׳‘׳¨ ׳©׳׳•׳¨?)
                 FBRef.refSavedRecipes.document(docId).get()
                         .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                             @Override
                             public void onSuccess(DocumentSnapshot documentSnapshot) {
                                 if (documentSnapshot.exists()) {
-                                    // אם קיים - מחק (Unsave)
+                                    // ׳׳ ׳§׳™׳™׳ - ׳׳—׳§ (Unsave)
                                     FBRef.refSavedRecipes.document(docId).delete()
                                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
@@ -185,7 +222,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                     savedIds.remove(recipeId);
                                                     notifyDataSetChanged();
                                                     Toast.makeText(v.getContext(),
-                                                            "Removed from favorites", // תרגום
+                                                            "Removed from favorites", // ׳×׳¨׳’׳•׳
                                                             Toast.LENGTH_SHORT).show();
                                                 }
                                             })
@@ -196,7 +233,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                 }
                                             });
                                 } else {
-                                    // אם לא קיים - צור חדש (Save)
+                                    // ׳׳ ׳׳ ׳§׳™׳™׳ - ׳¦׳•׳¨ ׳—׳“׳© (Save)
                                     SavedRecipe savedRecipe = new SavedRecipe(
                                             uid,
                                             recipeId,
@@ -211,7 +248,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                     savedIds.add(recipeId);
                                                     notifyDataSetChanged();
                                                     Toast.makeText(v.getContext(),
-                                                            "Saved successfully", // תרגום
+                                                            "Saved successfully", // ׳×׳¨׳’׳•׳
                                                             Toast.LENGTH_SHORT).show();
                                                 }
                                             })
@@ -250,14 +287,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 && !recipeId.isEmpty()
                 && (isOwner || isAdmin);
 
-        // --- הדפסות למציאת הבעיה ---
-        android.util.Log.d("DeleteDebug", "--- בדיקת מתכון: " + (recipe != null ? recipe.getTitle() : "null") + " ---");
-        android.util.Log.d("DeleteDebug", "1. showDelete (האם מותר למחוק במסך?): " + showDelete);
-        android.util.Log.d("DeleteDebug", "2. currentUserID (המשתמש שמחובר): " + currentUserID);
-        android.util.Log.d("DeleteDebug", "3. recipeUserId (מי יצר את המתכון?): " + recipeOwnerId);
-        android.util.Log.d("DeleteDebug", "4. isOwner (האם זה אותו אדם?): " + isOwner);
-        android.util.Log.d("DeleteDebug", "5. isAdmin (האם הוא מנהל?): " + isAdmin);
-        android.util.Log.d("DeleteDebug", "--> התוצאה הסופית (canDelete): " + canDelete);
+        // --- ׳”׳“׳₪׳¡׳•׳× ׳׳׳¦׳™׳׳× ׳”׳‘׳¢׳™׳” ---
+        android.util.Log.d("DeleteDebug", "--- ׳‘׳“׳™׳§׳× ׳׳×׳›׳•׳: " + (recipe != null ? recipe.getTitle() : "null") + " ---");
+        android.util.Log.d("DeleteDebug", "1. showDelete (׳”׳׳ ׳׳•׳×׳¨ ׳׳׳—׳•׳§ ׳‘׳׳¡׳?): " + showDelete);
+        android.util.Log.d("DeleteDebug", "2. currentUserID (׳”׳׳©׳×׳׳© ׳©׳׳—׳•׳‘׳¨): " + currentUserID);
+        android.util.Log.d("DeleteDebug", "3. recipeUserId (׳׳™ ׳™׳¦׳¨ ׳׳× ׳”׳׳×׳›׳•׳?): " + recipeOwnerId);
+        android.util.Log.d("DeleteDebug", "4. isOwner (׳”׳׳ ׳–׳” ׳׳•׳×׳• ׳׳“׳?): " + isOwner);
+        android.util.Log.d("DeleteDebug", "5. isAdmin (׳”׳׳ ׳”׳•׳ ׳׳ ׳”׳?): " + isAdmin);
+        android.util.Log.d("DeleteDebug", "--> ׳”׳×׳•׳¦׳׳” ׳”׳¡׳•׳₪׳™׳× (canDelete): " + canDelete);
         // ---------------------------
 
         if (!canDelete) {
@@ -334,7 +371,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot qs) {
-                        // מחיקת כל ההתייחסויות השמורות למתכון זה (Batch Write)
+                        // ׳׳—׳™׳§׳× ׳›׳ ׳”׳”׳×׳™׳™׳—׳¡׳•׳™׳•׳× ׳”׳©׳׳•׳¨׳•׳× ׳׳׳×׳›׳•׳ ׳–׳” (Batch Write)
                         if (qs.isEmpty()) return;
 
                         WriteBatch batch = FBRef.FBFS.batch();

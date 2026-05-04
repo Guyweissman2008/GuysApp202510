@@ -51,14 +51,14 @@ public class BaseActivity extends AppCompatActivity {
 
     private <T extends AppCompatActivity> void navigateTo(Class<T> destination) {
         startActivity(new Intent(this, destination));
-        overridePendingTransition(0, 0);//כדי שלא תיהיה אנימציה
-        finish();
+        overridePendingTransition(0, 0);//׳›׳“׳™ ׳©׳׳ ׳×׳™׳”׳™׳” ׳׳ ׳™׳׳¦׳™׳”
+        /////////////////////////////finish();
     }
     private void logoutUser() {
         FBRef.mAuth.signOut();
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//מנקה את המסכים הקודמים
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//׳׳ ׳§׳” ׳׳× ׳”׳׳¡׳›׳™׳ ׳”׳§׳•׳“׳׳™׳
         startActivity(intent);
         finish();
     }

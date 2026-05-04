@@ -2,8 +2,8 @@ package com.example.guysapp;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -74,16 +74,20 @@ public class ProfileActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        loadUserProfile();// טעינת נתוני המשתמש והמתכונים בכל פעם שהמסך עולה
+        Log.d("ProfileActivity", "onStart called");
+
+        loadUserProfile();// ׳˜׳¢׳™׳ ׳× ׳ ׳×׳•׳ ׳™ ׳”׳׳©׳×׳׳© ׳•׳”׳׳×׳›׳•׳ ׳™׳ ׳‘׳›׳ ׳₪׳¢׳ ׳©׳”׳׳¡׳ ׳¢׳•׳׳”
     }
     @Override
     protected void onStop() {
         super.onStop();
-        removeListener(myRecipesListener);      // מתכונים שלי (refRecipes לפי userId)
-        removeListener(savedRecipesListener);   // רשימת השמורים (refSavedRecipes)
-        removeListener(savedRecipeIdsForHeartsListener); // IDs של שמורים בשביל לבבות
+        Log.d("ProfileActivity", "onStop called");
+
+        removeListener(myRecipesListener);      // ׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™ (refRecipes ׳׳₪׳™ userId)
+        removeListener(savedRecipesListener);   // ׳¨׳©׳™׳׳× ׳”׳©׳׳•׳¨׳™׳ (refSavedRecipes)
+        removeListener(savedRecipeIdsForHeartsListener); // IDs ׳©׳ ׳©׳׳•׳¨׳™׳ ׳‘׳©׳‘׳™׳ ׳׳‘׳‘׳•׳×
         for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
-            removeListener(lr);                 // מאזין לכל מתכון שמור
+            removeListener(lr);                 // ׳׳׳–׳™׳ ׳׳›׳ ׳׳×׳›׳•׳ ׳©׳׳•׳¨
         }
         savedRecipeDocListeners.clear();
     }
@@ -133,7 +137,7 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void initActivityResultLaunchers() {
-        // הגדרת מקבל התוצאה מהגלריה
+        // ׳”׳’׳“׳¨׳× ׳׳§׳‘׳ ׳”׳×׳•׳¦׳׳” ׳׳”׳’׳׳¨׳™׳”
         imagePickerLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -141,7 +145,7 @@ public class ProfileActivity extends BaseActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                             tempSelectedImageUri = result.getData().getData();
-                            tempSelectedBitmap = null; // איפוס התמונה מהמצלמה אם בחרנו מהגלריה
+                            tempSelectedBitmap = null; // ׳׳™׳₪׳•׳¡ ׳”׳×׳׳•׳ ׳” ׳׳”׳׳¦׳׳׳” ׳׳ ׳‘׳—׳¨׳ ׳• ׳׳”׳’׳׳¨׳™׳”
                             if (dialogProfileImageView != null && tempSelectedImageUri != null) {
                                 dialogProfileImageView.setImageURI(tempSelectedImageUri);
                             }
@@ -150,7 +154,7 @@ public class ProfileActivity extends BaseActivity {
                 }
         );
 
-        // הגדרת מקבל התוצאה מהמצלמה
+        // ׳”׳’׳“׳¨׳× ׳׳§׳‘׳ ׳”׳×׳•׳¦׳׳” ׳׳”׳׳¦׳׳׳”
         cameraLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -160,7 +164,7 @@ public class ProfileActivity extends BaseActivity {
                             Bundle extras = result.getData().getExtras();
                             if (extras != null) {
                                 tempSelectedBitmap = (Bitmap) extras.get("data");
-                                tempSelectedImageUri = null; // איפוס ה-URI אם צילמנו במצלמה
+                                tempSelectedImageUri = null; // ׳׳™׳₪׳•׳¡ ׳”-URI ׳׳ ׳¦׳™׳׳׳ ׳• ׳‘׳׳¦׳׳׳”
                                 if (dialogProfileImageView != null && tempSelectedBitmap != null) {
                                     dialogProfileImageView.setImageBitmap(tempSelectedBitmap);
                                 }
@@ -171,9 +175,9 @@ public class ProfileActivity extends BaseActivity {
         );
     }
     private void showImageSourceDialog() {
-        String[] options = {"בחר מהגלריה", "צלם תמונה"};
+        String[] options = {"Choose from Gallery", "Take Photo"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("בחר מקור תמונה");
+        builder.setTitle("Choose Image Source");
         builder.setItems(options, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -248,13 +252,37 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-        List<?> imageDataRaw = (List<?>) documentSnapshot.get("imageData");
+        // 1. ׳ ׳©׳׳•׳£ ׳׳× ׳”׳׳™׳“׳¢ ׳›׳׳•׳‘׳™׳™׳§׳˜ ׳›׳׳׳™ (׳™׳›׳•׳ ׳׳”׳™׳•׳× Blob ׳׳• ArrayList)
+        Object imageDataObj = documentSnapshot.get("imageData");
 
-        // שימוש במחלקה החדשה כדי לפענח את התמונה
-        Bitmap bitmap = ImageUtils.decodeFirestoreData(imageDataRaw);
+        if (imageDataObj == null) return;
 
+        Bitmap bitmap = null;
+
+        // 2. ׳ ׳‘׳“׳•׳§ ׳׳ ׳–׳” ׳”׳₪׳•׳¨׳׳˜ ׳”׳—׳“׳© (Blob)
+        if (imageDataObj instanceof com.google.firebase.firestore.Blob) {
+            bitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageDataObj);
+        }
+        // 3. ׳ ׳‘׳“׳•׳§ ׳׳ ׳–׳” ׳”׳₪׳•׳¨׳׳˜ ׳”׳™׳©׳ (ArrayList/List)
+        else if (imageDataObj instanceof java.util.List) {
+            bitmap = ImageHelper.decodeFirestoreData((java.util.List<?>) imageDataObj);
+        }
+
+        // 4. ׳׳ ׳”׳¦׳׳—׳ ׳• ׳׳™׳™׳¦׳¨ ׳×׳׳•׳ ׳” ׳׳׳—׳“ ׳”׳₪׳•׳¨׳׳˜׳™׳ - ׳ ׳¦׳™׳’ ׳׳•׳×׳”
         if (bitmap != null) {
             profileImage.setImageBitmap(bitmap);
+        }
+    }
+
+    private void NEW_setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
+        // ׳©׳׳™׳₪׳” ׳™׳©׳™׳¨׳” ׳›-Blob
+        com.google.firebase.firestore.Blob imageBlob = documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
+
+        if (imageBlob != null) {
+            Bitmap bitmap = ImageHelper.decodeBlobToBitmap(imageBlob);
+            if (bitmap != null) {
+                profileImage.setImageBitmap(bitmap);
+            }
         }
     }
 
@@ -266,35 +294,35 @@ public class ProfileActivity extends BaseActivity {
     }
 
     private void loadMyRecipesRealtime(String userId) {
-        // סגירת מאזין קודם כדי למנוע מאזינים כפולים
+        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳׳׳–׳™׳ ׳™׳ ׳›׳₪׳•׳׳™׳
         removeListener(myRecipesListener);
 
-        // מאזין RealTime לכל המתכונים שהמשתמש יצר
+        // ׳׳׳–׳™׳ RealTime ׳׳›׳ ׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳”׳׳©׳×׳׳© ׳™׳¦׳¨
         myRecipesListener = FBRef.refRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // כל שינוי במתכונים של המשתמש (הוספה / עדכון / מחיקה)
-                    // מפעיל מחדש את onEvent עם snapshot עדכני
+                    // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳׳×׳›׳•׳ ׳™׳ ׳©׳ ׳”׳׳©׳×׳׳© (׳”׳•׳¡׳₪׳” / ׳¢׳“׳›׳•׳ / ׳׳—׳™׳§׳”)
+                    // ׳׳₪׳¢׳™׳ ׳׳—׳“׳© ׳׳× onEvent ׳¢׳ snapshot ׳¢׳“׳›׳ ׳™
                     public void onEvent(@Nullable QuerySnapshot snapshot,
                                         @Nullable FirebaseFirestoreException e) {
 
                         if (e != null || snapshot == null)
                             return;
 
-                        // מתחילים מרשימה נקייה – תמונה חדשה של "המתכונים שלי"
+                        // ׳׳×׳—׳™׳׳™׳ ׳׳¨׳©׳™׳׳” ׳ ׳§׳™׳™׳” ג€“ ׳×׳׳•׳ ׳” ׳—׳“׳©׳” ׳©׳ "׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™"
                         myRecipes.clear();
 
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
                             Recipe recipe = doc.toObject(Recipe.class);
                             if (recipe != null) {
-                                // שמירת ה־id של המסמך בתוך האובייקט
+                                // ׳©׳׳™׳¨׳× ׳”ײ¾id ׳©׳ ׳”׳׳¡׳׳ ׳‘׳×׳•׳ ׳”׳׳•׳‘׳™׳™׳§׳˜
                                 recipe.setRecipeId(doc.getId());
                                 myRecipes.add(recipe);
                             }
                         }
 
-                        // עדכון המסך רק אם המשתמש נמצא בתצוגת "המתכונים שלי"
+                        // ׳¢׳“׳›׳•׳ ׳”׳׳¡׳ ׳¨׳§ ׳׳ ׳”׳׳©׳×׳׳© ׳ ׳׳¦׳ ׳‘׳×׳¦׳•׳’׳× "׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™"
                         if (showingMyRecipes) {
                             adapter.updateList(myRecipes);
                         }
@@ -304,29 +332,29 @@ public class ProfileActivity extends BaseActivity {
 
 
     private void loadSavedRecipesRealtime(String userId) {
-        // סגירת מאזין קודם כדי למנוע הצטברות מאזינים
+        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳”׳¦׳˜׳‘׳¨׳•׳× ׳׳׳–׳™׳ ׳™׳
         removeListener(savedRecipesListener);
 
-        // מאזין RealTime לרשימת ה־SavedRecipes של המשתמש
+        // ׳׳׳–׳™׳ RealTime ׳׳¨׳©׳™׳׳× ׳”ײ¾SavedRecipes ׳©׳ ׳”׳׳©׳×׳׳©
         savedRecipesListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // כל שינוי בשמירה / הסרה של מתכון
-                    // מפעיל מחדש את onEvent עם snapshot עדכני
+                    // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳©׳׳™׳¨׳” / ׳”׳¡׳¨׳” ׳©׳ ׳׳×׳›׳•׳
+                    // ׳׳₪׳¢׳™׳ ׳׳—׳“׳© ׳׳× onEvent ׳¢׳ snapshot ׳¢׳“׳›׳ ׳™
                     public void onEvent(@Nullable QuerySnapshot snapshot,
                                         @Nullable FirebaseFirestoreException e) {
 
                         if (e != null || snapshot == null)
                             return;
 
-                        // סגירת מאזינים קודמים של מסמכי מתכונים
+                        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳™׳ ׳§׳•׳“׳׳™׳ ׳©׳ ׳׳¡׳׳›׳™ ׳׳×׳›׳•׳ ׳™׳
                         for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
                             removeListener(lr);
                         }
                         savedRecipeDocListeners.clear();
 
-                        // מתחילים מרשימה ריקה – snapshot חדש
+                        // ׳׳×׳—׳™׳׳™׳ ׳׳¨׳©׳™׳׳” ׳¨׳™׳§׳” ג€“ snapshot ׳—׳“׳©
                         savedRecipes.clear();
                         if (!showingMyRecipes)
                             adapter.updateList(savedRecipes);
@@ -343,18 +371,18 @@ public class ProfileActivity extends BaseActivity {
                             if (rid == null || rid.trim().isEmpty())
                                 continue;
 
-                            // מאזין RealTime למסמך המתכון המקורי
+                            // ׳׳׳–׳™׳ RealTime ׳׳׳¡׳׳ ׳”׳׳×׳›׳•׳ ׳”׳׳§׳•׳¨׳™
                             ListenerRegistration lr = FBRef.refRecipes.document(rid)
                                     .addSnapshotListener(new EventListener<DocumentSnapshot>() {
                                         @Override
-                                        // כל שינוי במתכון עצמו (עדכון / מחיקה)
+                                        // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳׳×׳›׳•׳ ׳¢׳¦׳׳• (׳¢׳“׳›׳•׳ / ׳׳—׳™׳§׳”)
                                         public void onEvent(@Nullable DocumentSnapshot recipeDoc,
                                                             @Nullable FirebaseFirestoreException err) {
 
                                             if (err != null || recipeDoc == null)
                                                 return;
 
-                                            // אם המתכון המקורי נמחק – מסירים אותו מהשמורים
+                                            // ׳׳ ׳”׳׳×׳›׳•׳ ׳”׳׳§׳•׳¨׳™ ׳ ׳׳—׳§ ג€“ ׳׳¡׳™׳¨׳™׳ ׳׳•׳×׳• ׳׳”׳©׳׳•׳¨׳™׳
                                             if (!recipeDoc.exists()) {
                                                 removeRecipeFromSavedList(rid);
                                                 if (!showingMyRecipes)
@@ -362,7 +390,7 @@ public class ProfileActivity extends BaseActivity {
                                                 return;
                                             }
 
-                                            // המתכון קיים – עדכון / הוספה לרשימת השמורים
+                                            // ׳”׳׳×׳›׳•׳ ׳§׳™׳™׳ ג€“ ׳¢׳“׳›׳•׳ / ׳”׳•׳¡׳₪׳” ׳׳¨׳©׳™׳׳× ׳”׳©׳׳•׳¨׳™׳
                                             Recipe r = recipeDoc.toObject(Recipe.class);
                                             if (r == null)
                                                 return;
@@ -370,13 +398,13 @@ public class ProfileActivity extends BaseActivity {
                                             r.setRecipeId(recipeDoc.getId());
                                             upsertSavedRecipe(r);
 
-                                            // עדכון מסך רק אם נמצאים בתצוגת Saved
+                                            // ׳¢׳“׳›׳•׳ ׳׳¡׳ ׳¨׳§ ׳׳ ׳ ׳׳¦׳׳™׳ ׳‘׳×׳¦׳•׳’׳× Saved
                                             if (!showingMyRecipes)
                                                 adapter.updateList(savedRecipes);
                                         }
                                     });
 
-                            // שמירת המאזין כדי שנוכל לסגור אותו בהמשך
+                            // ׳©׳׳™׳¨׳× ׳”׳׳׳–׳™׳ ׳›׳“׳™ ׳©׳ ׳•׳›׳ ׳׳¡׳’׳•׳¨ ׳׳•׳×׳• ׳‘׳”׳׳©׳
                             savedRecipeDocListeners.put(rid, lr);
                         }
                     }
@@ -413,27 +441,25 @@ public class ProfileActivity extends BaseActivity {
 
 
     private void loadSavedRecipeIdsForHearts(String userId) {
-        // סגירת מאזין קודם כדי למנוע כפילויות
+        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳›׳₪׳™׳׳•׳™׳•׳×
         removeListener(savedRecipeIdsForHeartsListener);
 
-        // מאזין RealTime לרשימת המתכונים השמורים של המשתמש
-        // משמש רק לצורך סימון לבבות (Saved / Not Saved)
+        // ׳׳׳–׳™׳ RealTime ׳׳¨׳©׳™׳׳× ׳”׳׳×׳›׳•׳ ׳™׳ ׳”׳©׳׳•׳¨׳™׳ ׳©׳ ׳”׳׳©׳×׳׳©
+        // ׳׳©׳׳© ׳¨׳§ ׳׳¦׳•׳¨׳ ׳¡׳™׳׳•׳ ׳׳‘׳‘׳•׳× (Saved / Not Saved)
         savedRecipeIdsForHeartsListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // כל שמירה או הסרה של מתכון
-                    // מעדכנת את סט ה־IDs של הלבבות
+                    // ׳›׳ ׳©׳׳™׳¨׳” ׳׳• ׳”׳¡׳¨׳” ׳©׳ ׳׳×׳›׳•׳
+                    // ׳׳¢׳“׳›׳ ׳× ׳׳× ׳¡׳˜ ׳”ײ¾IDs ׳©׳ ׳”׳׳‘׳‘׳•׳×
                     public void onEvent(@Nullable QuerySnapshot snapshots,
                                         @Nullable FirebaseFirestoreException e) {
 
                         if (e != null || snapshots == null) {
-                            // במקרה של שגיאה – מאפסים לבבות
+                            // ׳‘׳׳§׳¨׳” ׳©׳ ׳©׳’׳™׳׳” ג€“ ׳׳׳₪׳¡׳™׳ ׳׳‘׳‘׳•׳×
                             adapter.setSavedIds(new HashSet<>());
                             return;
                         }
-
-                        // סט מזהי מתכונים שמורים (ללא כפילויות)
                         Set<String> ids = new HashSet<>();
 
                         for (DocumentSnapshot doc : snapshots.getDocuments()) {
@@ -451,7 +477,7 @@ public class ProfileActivity extends BaseActivity {
                             }
                         }
 
-                        // עדכון האדפטר אילו מתכונים מסומנים כ־Saved
+                        // ׳¢׳“׳›׳•׳ ׳”׳׳“׳₪׳˜׳¨ ׳׳™׳׳• ׳׳×׳›׳•׳ ׳™׳ ׳׳¡׳•׳׳ ׳™׳ ׳›ײ¾Saved
                         adapter.setSavedIds(ids);
                     }
                 });
@@ -484,7 +510,7 @@ public class ProfileActivity extends BaseActivity {
         layout.setPadding(50, 20, 50, 10);
         layout.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        // --- תמונה ---
+        // --- ׳×׳׳•׳ ׳” ---
         dialogProfileImageView = new ImageView(this);
         android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(250, 250);
         params.setMargins(0, 0, 0, 30);
@@ -500,7 +526,7 @@ public class ProfileActivity extends BaseActivity {
         dialogProfileImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showImageSourceDialog(); // מפעיל את חלונית הבחירה
+                showImageSourceDialog(); // ׳׳₪׳¢׳™׳ ׳׳× ׳—׳׳•׳ ׳™׳× ׳”׳‘׳—׳™׳¨׳”
             }
         });
         layout.addView(dialogProfileImageView);
@@ -544,27 +570,16 @@ public class ProfileActivity extends BaseActivity {
 
                 if (newFirst.isEmpty() || newLast.isEmpty()) {
                     Toast.makeText(ProfileActivity.this, "Please enter your full name", Toast.LENGTH_SHORT).show();
-                    return; // הדיאלוג לא ייסגר
+                    return; // ׳”׳“׳™׳׳׳•׳’ ׳׳ ׳™׳™׳¡׳’׳¨
                 }
 
                 saveProfileChanges(newFirst, newLast, dialog, positiveBtn);
             }
         });
     }
-    private List<Integer> processBitmap(Bitmap originalBitmap) {
-        Bitmap resizedBitmap = scaleBitmapDown(originalBitmap, 300);
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
-        byte[] data = baos.toByteArray();
 
-        List<Integer> imageData = new ArrayList<>();
-        for (byte b : data) {
-            imageData.add(b & 0xFF);
-        }
-        return imageData;
-    }
 
-    //אני מפרידה שוב את השם המלא כדי לאפשר למשתמש לערוך רק אחד מהם,מתי שהדיאלוג נפתח.
+    //׳׳ ׳™ ׳׳₪׳¨׳™׳“׳” ׳©׳•׳‘ ׳׳× ׳”׳©׳ ׳”׳׳׳ ׳›׳“׳™ ׳׳׳₪׳©׳¨ ׳׳׳©׳×׳׳© ׳׳¢׳¨׳•׳ ׳¨׳§ ׳׳—׳“ ׳׳”׳,׳׳×׳™ ׳©׳”׳“׳™׳׳׳•׳’ ׳ ׳₪׳×׳—.
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
         String currentFullName = tvFullName.getText().toString().trim();
         if (currentFullName.isEmpty())
@@ -582,39 +597,40 @@ public class ProfileActivity extends BaseActivity {
             etLastName.setText(lastNameBuilder.toString().trim());
         }
     }
-    // שליפת הטקסט שהמשתמש הקליד ושליחה לפונקציית השמירה בפיירבייס
+    // ׳©׳׳™׳₪׳× ׳”׳˜׳§׳¡׳˜ ׳©׳”׳׳©׳×׳׳© ׳”׳§׳׳™׳“ ׳•׳©׳׳™׳—׳” ׳׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳”׳©׳׳™׳¨׳” ׳‘׳₪׳™׳™׳¨׳‘׳™׳™׳¡
     private void saveProfileChanges(String firstName, String lastName, AlertDialog dialog, Button btnSave) {
         setSavingState(true, btnSave);
         FirebaseUser user = FBRef.mAuth.getCurrentUser();
         if (user == null) {
-            Toast.makeText(this, "אין משתמש מחובר", Toast.LENGTH_SHORT).show();
-            setSavingState(false, btnSave);
+            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();            setSavingState(false, btnSave);
             return;
         }
         String userId = user.getUid();
-        // חיבור השם הפרטי ושם המשפחה למחרוזת אחת
+        // ׳—׳™׳‘׳•׳¨ ׳”׳©׳ ׳”׳₪׳¨׳˜׳™ ׳•׳©׳ ׳”׳׳©׳₪׳—׳” ׳׳׳—׳¨׳•׳–׳× ׳׳—׳×
         String fullName = firstName + " " + lastName;
 
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
-        //  לשמירה בפיירסור בשדות נפרדים כדי לשמור על סדר
+        //  ׳׳©׳׳™׳¨׳” ׳‘׳₪׳™׳™׳¨׳¡׳•׳¨ ׳‘׳©׳“׳•׳× ׳ ׳₪׳¨׳“׳™׳ ׳›׳“׳™ ׳׳©׳׳•׳¨ ׳¢׳ ׳¡׳“׳¨
         updates.put("firstName", firstName);
         updates.put("lastName", lastName);
-        // בתוך saveProfileChanges...
+        // ׳‘׳×׳•׳ saveProfileChanges...
         if (tempSelectedImageUri != null || tempSelectedBitmap != null) {
             try {
-                List<Integer> newImageData;
+                com.google.firebase.firestore.Blob newImageBlob; // ׳©׳™׳ ׳•׳™ ׳-Blob
+
                 if (tempSelectedImageUri != null) {
-                    // שולחים את ה-ContentResolver כדי שהמחלקה תוכל לגשת לגלריה
-                    newImageData = ImageUtils.processUriToIntegerList(getContentResolver(), tempSelectedImageUri, 300);
+                    Bitmap galleryBitmap = ImageHelper.loadBitmapFromUri(this, tempSelectedImageUri);
+                    // ׳©׳™׳׳•׳© ׳‘-bitmapToBlob ׳”׳—׳“׳©
+                    newImageBlob = ImageHelper.bitmapToBlob(this, galleryBitmap, ImageHelper.SMALL_IMAGE);
                 } else {
-                    // שולחים את ה-Bitmap מהמצלמה
-                    newImageData = ImageUtils.processBitmapToIntegerList(tempSelectedBitmap, 300);
+                    newImageBlob = ImageHelper.bitmapToBlob(this, tempSelectedBitmap, ImageHelper.SMALL_IMAGE);
                 }
-                updates.put("imageData", newImageData);
+
+                if (newImageBlob != null) {
+                    updates.put("imageData", newImageBlob);
+                }
             } catch (Exception e) {
-                Toast.makeText(this, "Image processing failed", Toast.LENGTH_SHORT).show();
-                resetDialogImageToCurrentProfile();
-                setSavingState(false, btnSave);
+                Toast.makeText(this, "Image processing failed", Toast.LENGTH_SHORT).show();                setSavingState(false, btnSave);
                 return;
             }
         }
@@ -624,8 +640,8 @@ public class ProfileActivity extends BaseActivity {
                     public void onSuccess(Void aVoid) {
                         tvFullName.setText(fullName);
 
-                        // ---> כאן שמים את הקוד <---
-                        // 2. עדכון התמונה במסך (אם השתנתה)
+                        // ---> ׳›׳׳ ׳©׳׳™׳ ׳׳× ׳”׳§׳•׳“ <---
+                        // 2. ׳¢׳“׳›׳•׳ ׳”׳×׳׳•׳ ׳” ׳‘׳׳¡׳ (׳׳ ׳”׳©׳×׳ ׳×׳”)
                         if (tempSelectedImageUri != null) {
                             profileImage.setImageURI(tempSelectedImageUri);
                         } else if (tempSelectedBitmap != null) {
@@ -633,33 +649,33 @@ public class ProfileActivity extends BaseActivity {
                         }
                         // -----------------------------
 
-                        // --- התיקון: עדכון מיידי של הרשימה המקומית במסך הפרופיל ---
+                        // --- ׳”׳×׳™׳§׳•׳: ׳¢׳“׳›׳•׳ ׳׳™׳™׳“׳™ ׳©׳ ׳”׳¨׳©׳™׳׳” ׳”׳׳§׳•׳׳™׳× ׳‘׳׳¡׳ ׳”׳₪׳¨׳•׳₪׳™׳ ---
                         for (Recipe recipe : myRecipes) {
                             recipe.setUsername(fullName);
                         }
-                        // מעדכנים גם את השמורים למקרה שאנחנו במסך השמורים
+                        // ׳׳¢׳“׳›׳ ׳™׳ ׳’׳ ׳׳× ׳”׳©׳׳•׳¨׳™׳ ׳׳׳§׳¨׳” ׳©׳׳ ׳—׳ ׳• ׳‘׳׳¡׳ ׳”׳©׳׳•׳¨׳™׳
                         for (Recipe recipe : savedRecipes) {
                             recipe.setUsername(fullName);
                         }
-                        // מודיעים לאדפטר שהמידע השתנה כדי שיצייר מחדש את השמות
+                        // ׳׳•׳“׳™׳¢׳™׳ ׳׳׳“׳₪׳˜׳¨ ׳©׳”׳׳™׳“׳¢ ׳”׳©׳×׳ ׳” ׳›׳“׳™ ׳©׳™׳¦׳™׳™׳¨ ׳׳—׳“׳© ׳׳× ׳”׳©׳׳•׳×
                         if (adapter != null) {
                             adapter.notifyDataSetChanged();
                         }
 
-                        // 3. עדכון מסד הנתונים עבור מסך הבית ושאר המשתמשים
+                        // 3. ׳¢׳“׳›׳•׳ ׳׳¡׳“ ׳”׳ ׳×׳•׳ ׳™׳ ׳¢׳‘׳•׳¨ ׳׳¡׳ ׳”׳‘׳™׳× ׳•׳©׳׳¨ ׳”׳׳©׳×׳׳©׳™׳
                         updateRecipeAuthorNameInDatabase(userId, fullName);
                         setSavingState(false, btnSave);
-                        dialog.dismiss(); // סוגרים רק אחרי הצלחה
+                        dialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // מחזירים UI למצב רגיל (מפסיקים טעינה ומאפשרים ללחוץ שוב)
+                        // ׳׳—׳–׳™׳¨׳™׳ UI ׳׳׳¦׳‘ ׳¨׳’׳™׳ (׳׳₪׳¡׳™׳§׳™׳ ׳˜׳¢׳™׳ ׳” ׳•׳׳׳₪׳©׳¨׳™׳ ׳׳׳—׳•׳¥ ׳©׳•׳‘)
                         setSavingState(false, btnSave);
 
-                        // אם הייתה תמונה שנבחרה לדיאלוג – מחזירים לתמונה הקודמת
-                        // (כדי לא להישאר במצב "חצי נבחר" אחרי כשל בשמירה)
+                        // ׳׳ ׳”׳™׳™׳×׳” ׳×׳׳•׳ ׳” ׳©׳ ׳‘׳—׳¨׳” ׳׳“׳™׳׳׳•׳’ ג€“ ׳׳—׳–׳™׳¨׳™׳ ׳׳×׳׳•׳ ׳” ׳”׳§׳•׳“׳׳×
+                        // (׳›׳“׳™ ׳׳ ׳׳”׳™׳©׳׳¨ ׳‘׳׳¦׳‘ "׳—׳¦׳™ ׳ ׳‘׳—׳¨" ׳׳—׳¨׳™ ׳›׳©׳ ׳‘׳©׳׳™׳¨׳”)
                         if (tempSelectedImageUri != null) {
                             resetDialogImageToCurrentProfile();
                         }
@@ -670,39 +686,26 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
-
-
-    // פונקציית עזר לעדכון מתכונים
-    // Updates author display name in Recipes (field: "username")
     private void updateRecipeAuthorNameInDatabase(String userId, String newFullName) {
         setLoading(true);
-        // מחפשים את כל המתכונים שהמשתמש הזה יצר
         FBRef.refRecipes.whereEqualTo("userId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot querySnapshot) {
-
                         if (querySnapshot == null || querySnapshot.isEmpty()) {
                             setLoading(false);
                             return;
                         }
-
-                        // אנו משתמשים ב-WriteBatch כדי לעשות הרבה עדכונים בבת אחת בצורה יעילה
                         WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
-
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            // "username" הוא השדה במתכון שמחזיק את שם המחבר (לפי המבנה המקובל)
-                            // אם אצלך במודל של Recipe השדה נקרא אחרת (למשל authorName), יש לשנות כאן
                             batch.update(doc.getReference(), "username", newFullName);
                         }
-
-                        // הרצת העדכון למתכונים
                         batch.commit()
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        // שלב ג: עדכון מתכונים שמורים (SavedRecipes)
-                                        // אם שמרו מתכון שלך, צריך לעדכן שם את ה-AuthorName כדי שיראו את השם החדש
+                                        // ׳©׳׳‘ ׳’: ׳¢׳“׳›׳•׳ ׳׳×׳›׳•׳ ׳™׳ ׳©׳׳•׳¨׳™׳ (SavedRecipes)
+                                        // ׳׳ ׳©׳׳¨׳• ׳׳×׳›׳•׳ ׳©׳׳, ׳¦׳¨׳™׳ ׳׳¢׳“׳›׳ ׳©׳ ׳׳× ׳”-AuthorName ׳›׳“׳™ ׳©׳™׳¨׳׳• ׳׳× ׳”׳©׳ ׳”׳—׳“׳©
                                         updateSavedRecipeAuthorNameInDatabase(userId, newFullName);
 
                                     }
@@ -711,9 +714,8 @@ public class ProfileActivity extends BaseActivity {
                                     public void onFailure(@NonNull Exception e) {
                                         setLoading(false);
                                         Toast.makeText(ProfileActivity.this,
-                                                "שגיאה בעדכון מתכונים שלי: " + e.getMessage(),
-                                                Toast.LENGTH_LONG).show();
-                                    }
+                                                "Error updating my recipes: " + e.getMessage(),
+                                                Toast.LENGTH_LONG).show();                                    }
                                 });
                     }
                 })
@@ -728,7 +730,6 @@ public class ProfileActivity extends BaseActivity {
                 });
     }
     private void updateSavedRecipeAuthorNameInDatabase(String userId, String newFullName) {
-        // כאן אנחנו מחפשים במסמכי SavedRecipes איפה שה-recipeOwnerId הוא המשתמש שלנו
         FBRef.refSavedRecipes.whereEqualTo("recipeOwnerId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -740,24 +741,23 @@ public class ProfileActivity extends BaseActivity {
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
-                        // אנו משתמשים ב-WriteBatch כדי לעשות הרבה עדכונים בבת אחת בצורה יעילה
+                        // ׳׳ ׳• ׳׳©׳×׳׳©׳™׳ ׳‘-WriteBatch ׳›׳“׳™ ׳׳¢׳©׳•׳× ׳”׳¨׳‘׳” ׳¢׳“׳›׳•׳ ׳™׳ ׳‘׳‘׳× ׳׳—׳× ׳‘׳¦׳•׳¨׳” ׳™׳¢׳™׳׳”
                         WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
-
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            // בודקים איך קוראים לשדה אצלך ב-SavedRecipe. בדרך כלל authorName
+                            // ׳‘׳•׳“׳§׳™׳ ׳׳™׳ ׳§׳•׳¨׳׳™׳ ׳׳©׳“׳” ׳׳¦׳׳ ׳‘-SavedRecipe. ׳‘׳“׳¨׳ ׳›׳׳ authorName
                             batch.update(doc.getReference(), "authorName", newFullName);
                         }
-
                         batch.commit().addOnSuccessListener(aVoid -> {
                                     setLoading(false);
                                     Toast.makeText(ProfileActivity.this,
-                                            "הפרופיל עודכן בהצלחה בכל האפליקציה!",
+                                            "Profile updated successfully across the app!",
                                             Toast.LENGTH_LONG).show();
                                 })
                                 .addOnFailureListener(e -> {
                                     setLoading(false);
                                     Toast.makeText(ProfileActivity.this,
-                                            "שגיאה בעדכון מתכונים שמורים: " + e.getMessage(),
+                                            "Error updating saved recipes: "
+                                                    + e.getMessage(),
                                             Toast.LENGTH_LONG).show();
                                 });
                     }
@@ -767,32 +767,14 @@ public class ProfileActivity extends BaseActivity {
                     public void onFailure(@NonNull Exception e) {
                         ProfileActivity.this.setLoading(false);
                         Toast.makeText(ProfileActivity.this,
-                                "שגיאה בשליפת המתכונים השמורים לעדכון: " + e.getMessage(),
+                                "Error loading saved recipes for update: "
+                                        + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
     }
-    private List<Integer> processImageUri(android.net.Uri uri) throws java.io.IOException {
-        Bitmap originalBitmap = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-        return processBitmap(originalBitmap);
-    }
-    private Bitmap scaleBitmapDown(Bitmap bitmap, int maxDimension) {
-        int originalWidth = bitmap.getWidth();
-        int originalHeight = bitmap.getHeight();
-        int resizedWidth = maxDimension;
-        int resizedHeight = maxDimension;
-        if (originalHeight > originalWidth) {
-            resizedHeight = maxDimension;
-            resizedWidth = (int) (resizedHeight * (float) originalWidth / (float) originalHeight);
-        } else if (originalWidth > originalHeight) {
-            resizedWidth = maxDimension;
-            resizedHeight = (int) (resizedWidth * (float) originalHeight / (float) originalWidth);
-        } else if (originalHeight == originalWidth) {
-            resizedHeight = maxDimension;
-            resizedWidth = maxDimension;
-        }
-        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
-    }
+
+
     private void setLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
@@ -804,7 +786,7 @@ public class ProfileActivity extends BaseActivity {
     }
     private void resetDialogImageToCurrentProfile() {
         tempSelectedImageUri = null;
-        tempSelectedBitmap = null; // הוספנו את זה
+        tempSelectedBitmap = null;
         if (dialogProfileImageView == null) return;
         if (profileImage.getDrawable() != null) {
             dialogProfileImageView.setImageDrawable(profileImage.getDrawable());

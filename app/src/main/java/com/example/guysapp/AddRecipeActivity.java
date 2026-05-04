@@ -1,15 +1,13 @@
 package com.example.guysapp;
 import android.Manifest;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -18,6 +16,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -25,9 +26,9 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentSnapshot;
 
-import java.io.IOException;
 import java.util.List;
 
 public class AddRecipeActivity extends BaseActivity {
@@ -35,35 +36,46 @@ public class AddRecipeActivity extends BaseActivity {
     private ImageView imageRecipe;
     private Spinner spinnerCategory;
     private Button btnSave, btnAddImage;
-    private ImageButton btnBackk;
+    private ImageButton btnBack;
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
     private String selectedCategory = "";
 
     private final ActivityResultLauncher<Intent> pickImageLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    handleImage(result.getData().getData());
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        AddRecipeActivity.this.handleImage(result.getData().getData());
+                    }
                 }
             });
     private final ActivityResultLauncher<String> requestCameraPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) openCamera();
-                else Toast.makeText(AddRecipeActivity.this, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show();
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
+                @Override
+                public void onActivityResult(Boolean isGranted) {
+                    if (isGranted) AddRecipeActivity.this.openCamera();
+                    else
+                        Toast.makeText(AddRecipeActivity.this, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show();
+                }
             });
     private final ActivityResultLauncher<Uri> cameraLauncher =
-            registerForActivityResult(new ActivityResultContracts.TakePicture(), result -> {
-                if (result) handleImage(cameraImageUri);
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), new ActivityResultCallback<Boolean>() {
+                @Override
+                public void onActivityResult(Boolean result) {
+                    if (result) AddRecipeActivity.this.handleImage(cameraImageUri);
+                }
             });
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
-        setupBottomNavigation(R.id.nav_add);
+        //׳׳™׳•׳×׳¨
+        // setupBottomNavigation(R.id.nav_add);
         initViews();
         setupCategorySpinner();
         setupClickListeners();
-        // בדיקה אם עדכון
+        // ׳‘׳“׳™׳§׳” ׳׳ ׳¢׳“׳›׳•׳
         String recipeId = getIntent().getStringExtra("recipeId");
         if (recipeId != null && !recipeId.isEmpty()) {
             loadRecipeForEditing(recipeId);
@@ -79,7 +91,7 @@ public class AddRecipeActivity extends BaseActivity {
         spinnerCategory = findViewById(R.id.spinner_category);
         btnSave = findViewById(R.id.button_add_recipe);
         btnAddImage = findViewById(R.id.button_add_image);
-        btnBackk = findViewById(R.id.btnBackk);
+        btnBack = findViewById(R.id.btnBackk);
         editPrepTime = findViewById(R.id.edit_prep_time);
 
     }
@@ -112,7 +124,7 @@ public class AddRecipeActivity extends BaseActivity {
                 AddRecipeActivity.this.saveOrUpdateRecipe();
             }
         });
-        btnBackk.setOnClickListener(new View.OnClickListener() {
+        btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(AddRecipeActivity.this, "back", Toast.LENGTH_SHORT).show();
@@ -120,7 +132,7 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
     }
-    // דיאלוג לגלריה או מצלמה
+    // ׳“׳™׳׳׳•׳’ ׳׳’׳׳¨׳™׳” ׳׳• ׳׳¦׳׳׳”
     private void showImageSourceDialog() {
         String[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -149,31 +161,35 @@ public class AddRecipeActivity extends BaseActivity {
         }
     }
     private void openCamera() {
-        cameraImageUri = createImageUri();
-        if (cameraImageUri != null) cameraLauncher.launch(cameraImageUri);
-        else Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show();
+        cameraImageUri = ImageHelper.createImageUri(this, "Recipe Photo", "Taken for recipe: " + editTitle.getText().toString());
+
+        if (cameraImageUri != null) {
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+
+            // --- ׳”׳×׳™׳§׳•׳: ׳”׳•׳¡׳₪׳× ׳”׳¨׳©׳׳•׳× ׳’׳™׳©׳” ׳-URI ---
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            cameraLauncher.launch(cameraImageUri); // ׳”׳©׳•׳¨׳” ׳”׳׳§׳•׳¨׳™׳× ׳©׳׳
+        } else {
+            Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show();
+        }
     }
-    private Uri createImageUri() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "New Recipe Picture");
-        return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-    }
-    // כדי שיהיה אפשר לראות על המסך
+    // ׳›׳“׳™ ׳©׳™׳”׳™׳” ׳׳₪׳©׳¨ ׳׳¨׳׳•׳× ׳¢׳ ׳”׳׳¡׳
     private void handleImage(Uri imageUri) {
         if (imageUri == null) return;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                selectedBitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), imageUri));
-            } else {
-                selectedBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-            }
+
+        selectedBitmap = ImageHelper.loadBitmapFromUri(this, imageUri);
+
+        if (selectedBitmap != null) {
+            selectedBitmap = ImageHelper.scaleForRecipe(selectedBitmap);
             imageRecipe.setImageBitmap(selectedBitmap);
-        } catch (IOException e) {
+        } else {
             Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
         }
     }
     private void saveOrUpdateRecipe() {
-        btnSave.setEnabled(false);// נעילת הכפתור
+        btnSave.setEnabled(false);// ׳ ׳¢׳™׳׳× ׳”׳›׳₪׳×׳•׳¨
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();
         String prepTime = editPrepTime.getText().toString().trim();
@@ -182,23 +198,22 @@ public class AddRecipeActivity extends BaseActivity {
             btnSave.setEnabled(true);
             return;
         }
+
         if (selectedBitmap == null) {
             Toast.makeText(this, "Please select an image", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-        // התמונה תיהיה רשימת מספרים כדי שתוכל להישמר
-        List<Integer> imageDataList = ImageUtil.processSelectedImage(this, selectedBitmap);
-        if (imageDataList == null) {
+
+        // ׳™׳¦׳™׳¨׳× ׳”-Blob
+        Blob imageDataBlob = ImageHelper.bitmapToBlob(this, selectedBitmap, ImageHelper.NORMAL_IMAGE);
+
+        if (imageDataBlob == null) {
+            Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-        if (FBRef.mAuth.getCurrentUser() == null) {
-            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
-            btnSave.setEnabled(true);
-            return;
-        }
-        // מביא את הנתונים של המשתמש
+
         String userId = FBRef.mAuth.getCurrentUser().getUid();
         FBRef.refUsers.document(userId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
@@ -206,78 +221,147 @@ public class AddRecipeActivity extends BaseActivity {
                 String firstName = documentSnapshot.getString("firstName");
                 String lastName = documentSnapshot.getString("lastName");
                 String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+
                 String recipeId = AddRecipeActivity.this.getIntent().getStringExtra("recipeId");
                 if (recipeId == null || recipeId.isEmpty()) {
-                    AddRecipeActivity.this.addNewRecipe(title, description, imageDataList, selectedCategory, userId, username, prepTime);
+                    AddRecipeActivity.this.addNewRecipe(title, description, imageDataBlob, selectedCategory, userId, username, prepTime);
                 } else {
-                    AddRecipeActivity.this.updateRecipe(recipeId, title, description, imageDataList, selectedCategory, userId, username, prepTime);
+                    AddRecipeActivity.this.updateRecipe(recipeId, title, description, imageDataBlob, selectedCategory, prepTime);
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
+                btnSave.setEnabled(true);
                 Toast.makeText(AddRecipeActivity.this, "Error fetching user details", Toast.LENGTH_SHORT).show();
-                btnSave.setEnabled(true);
             }
         });
     }
-    private void addNewRecipe(String title, String description, List<Integer> imageDataList,
-                              String category, String userId, String username, String prepTime) {
+
+    private void addNewRecipe(String title, String description, Blob imageData, String category, String userId, String username, String prepTime) {
         String docId = FBRef.refRecipes.document().getId();
-        Recipe recipe = new Recipe(docId, title, description, imageDataList, category, username, userId, prepTime);
-        FBRef.refRecipes.document(docId).set(recipe).addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
-                Toast.makeText(AddRecipeActivity.this, "Recipe Added!", Toast.LENGTH_SHORT).show();
-                AddRecipeActivity.this.finish();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(AddRecipeActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                btnSave.setEnabled(true);
-            }
-        });
+        Recipe recipe = new Recipe(docId, title, description, imageData, category, username, userId, prepTime);
+
+        FBRef.refRecipes.document(docId).set(recipe)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("AddRecipeActivity", "Recipe saved, navigating back...");
+
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        btnSave.setEnabled(true);
+                        Toast.makeText(AddRecipeActivity.this, "Error saving recipe", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
-    private void updateRecipe(String recipeId, String title, String description,
-                              List<Integer> imageDataList, String category, String userId, String username, String prepTime) {
+
+
+    private void updateRecipe(String recipeId, String title, String description, Blob imageData, String category, String prepTime) {
         FBRef.refRecipes.document(recipeId).update(
-                "title", title,
-                "description", description,
-                "category", category,
-                "imageData", imageDataList,
-                "preparationTime", prepTime
-        ).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        "title", title,
+                        "description", description,
+                        "category", category,
+                        "imageData", imageData,
+                        "preparationTime", prepTime)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("AddRecipeActivity", "Recipe saved, navigating back...");
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        btnSave.setEnabled(true);
+                        Toast.makeText(AddRecipeActivity.this, "Update failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+
+    private void loadRecipeForEditing(String recipeId) {
+        FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
-            public void onSuccess(Void aVoid) {
-                Toast.makeText(AddRecipeActivity.this, "Recipe Updated!", Toast.LENGTH_SHORT).show();
-                AddRecipeActivity.this.finish();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(AddRecipeActivity.this, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                btnSave.setEnabled(true);
+            public void onSuccess(DocumentSnapshot document) {
+                if (!document.exists()) return;
+
+                // ׳©׳׳™׳₪׳× ׳”׳׳™׳“׳¢ ׳”׳’׳•׳׳׳™ ׳©׳ ׳”׳×׳׳•׳ ׳” ׳›׳“׳™ ׳׳‘׳“׳•׳§ ׳׳× ׳”׳¡׳•׳’ ׳©׳׳•
+                Object imageDataObject = document.get("imageData");
+                Bitmap loadedBitmap = null;
+
+                if (imageDataObject instanceof com.google.firebase.firestore.Blob) {
+                    // ׳₪׳•׳¨׳׳˜ ׳—׳“׳© - Blob
+                    loadedBitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageDataObject);
+                } else if (imageDataObject instanceof List) {
+                    // ׳₪׳•׳¨׳׳˜ ׳™׳©׳ - List<Integer>
+                    loadedBitmap = ImageHelper.decodeFirestoreData((List<?>) imageDataObject);
+                }
+
+                // ׳¢׳›׳©׳™׳• ׳ ׳˜׳¢׳ ׳׳× ׳©׳׳¨ ׳”׳׳•׳‘׳™׳™׳§׳˜
+                Recipe recipe = document.toObject(Recipe.class);
+                if (recipe != null) {
+                    editTitle.setText(recipe.getTitle());
+                    editDescription.setText(recipe.getDescription());
+                    editPrepTime.setText(recipe.getPreparationTime());
+
+                    // ׳¢׳“׳›׳•׳ ׳”׳¡׳₪׳™׳ ׳¨
+                    selectedCategory = recipe.getCategory();
+                    ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
+                    if (adapter != null) {
+                        spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
+                    }
+
+                    // ׳”׳¦׳’׳× ׳”׳×׳׳•׳ ׳” ׳©׳₪׳¢׳ ׳—׳ ׳• (׳‘׳™׳ ׳׳ ׳”׳™׳™׳×׳” Blob ׳׳• List)
+                    if (loadedBitmap != null) {
+                        selectedBitmap = loadedBitmap;
+                        imageRecipe.setImageBitmap(selectedBitmap);
+                    }
+                    btnSave.setText("Update Recipe");
+                }
             }
         });
     }
-    private void loadRecipeForEditing(String recipeId) {
-        FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(document -> {
-            if (!document.exists()) return;
-            Recipe recipe = document.toObject(Recipe.class);
-            if (recipe == null) return;
-            editTitle.setText(recipe.getTitle());
-            editDescription.setText(recipe.getDescription());
-            editPrepTime.setText(recipe.getPreparationTime());
-            selectedCategory = recipe.getCategory();
-            ArrayAdapter adapter = (ArrayAdapter) spinnerCategory.getAdapter();
-            spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
-            if (recipe.getImageData() != null) {
-                byte[] bytes = recipe.imageDataToBytes();
-                selectedBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                imageRecipe.setImageBitmap(selectedBitmap);
+
+    private void NEW_loadRecipeForEditing(String recipeId) {
+        FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot document) {
+                if (!document.exists()) return;
+                Recipe recipe = document.toObject(Recipe.class);
+                if (recipe == null) return;
+                editTitle.setText(recipe.getTitle());
+                editDescription.setText(recipe.getDescription());
+                editPrepTime.setText(recipe.getPreparationTime());
+                selectedCategory = recipe.getCategory();
+                ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
+                spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
+                if (recipe.getImageData() != null) {
+                    // ׳˜׳¢׳™׳ ׳× Blob
+                    selectedBitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
+                    imageRecipe.setImageBitmap(selectedBitmap);
+                }
+                btnSave.setText("Update Recipe");
             }
-            btnSave.setText("Update Recipe");
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (imageRecipe != null) {
+            imageRecipe.setImageDrawable(null);
+        }
+
+        selectedBitmap = null;
+        cameraImageUri = null;
+
+        super.onDestroy();
     }
 }
