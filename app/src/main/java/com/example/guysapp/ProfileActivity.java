@@ -235,26 +235,15 @@ public class ProfileActivity extends BaseActivity {
                 });
     }
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-        Object imageDataObj = documentSnapshot.get("imageData");
-        if (imageDataObj == null) return;
-        Bitmap bitmap = null;
-        if (imageDataObj instanceof com.google.firebase.firestore.Blob) {
-            bitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageDataObj);
-        }
-        else if (imageDataObj instanceof java.util.List) {
-            bitmap = ImageHelper.decodeFirestoreData((java.util.List<?>) imageDataObj);
-        }
+        com.google.firebase.firestore.Blob imageBlob =
+                documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
+
+        if (imageBlob == null) return;
+
+        Bitmap bitmap = ImageHelper.decodeBlobToBitmap(imageBlob);
+
         if (bitmap != null) {
             profileImage.setImageBitmap(bitmap);
-        }
-    }
-    private void NEW_setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-        com.google.firebase.firestore.Blob imageBlob = documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
-        if (imageBlob != null) {
-            Bitmap bitmap = ImageHelper.decodeBlobToBitmap(imageBlob);
-            if (bitmap != null) {
-                profileImage.setImageBitmap(bitmap);
-            }
         }
     }
     private void setFullName(DocumentSnapshot documentSnapshot) {

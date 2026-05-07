@@ -65,18 +65,8 @@ public class Recipe {
         return imageData;
     }
 
-    public void NEW_setImageData(Blob imageData) {
+    public void setImageData(Blob imageData) {
         this.imageData = imageData;
-    }
-    // ׳‘׳×׳•׳ Recipe.java
-    public void setImageData(Object imageData) {
-        if (imageData instanceof Blob) {
-            this.imageData = (Blob) imageData;
-        } else if (imageData instanceof List) {
-            // ׳׳ ׳–׳” List, ׳׳ ׳—׳ ׳• ׳ ׳”׳₪׳•׳ ׳׳•׳×׳• ׳-Blob ׳›׳“׳™ ׳©׳”׳׳•׳“׳ ׳™׳™׳©׳׳¨ ׳׳—׳™׳“
-            byte[] bytes = ImageHelper.listToByteArray((List<?>) imageData);
-            this.imageData = Blob.fromBytes(bytes);
-        }
     }
 
     public String getCategory() {
@@ -111,11 +101,5 @@ public class Recipe {
         this.preparationTime = preparationTime;
     }
 
-    /**
-     * ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳¢׳–׳¨ ׳׳”׳׳¨׳× ׳”-Blob ׳׳׳¢׳¨׳ ׳‘׳×׳™׳ (׳¢׳‘׳•׳¨ Bitmap)
-     */
-    public byte[] imageDataToBytes() {
-        if (imageData == null) return null;
-        return imageData.toBytes(); // ׳₪׳•׳ ׳§׳¦׳™׳” ׳׳•׳‘׳ ׳™׳× ׳©׳ Firebase, ׳׳”׳™׳¨׳” ׳•׳™׳¢׳™׳׳”
-    }
+
 }

@@ -81,32 +81,5 @@ public class ImageHelper {
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
         return context.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
-    public static Bitmap decodeFirestoreData(List<?> list) {
-        if (list == null || list.isEmpty()) return null;
 
-        try {
-            byte[] bytes = new byte[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                bytes[i] = ((Number) list.get(i)).byteValue();
-            }
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        } catch (Exception e) {
-            Log.e("ImageHelper", "Error decoding legacy list", e);
-            return null;
-        }
-    }
-    public static byte[] listToByteArray(List<?> list) {
-        if (list == null || list.isEmpty()) return null;
-        byte[] bytes = new byte[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            Object value = list.get(i);
-            // Firestore ׳׳¢׳™׳×׳™׳ ׳׳—׳–׳™׳¨ Long, ׳׳›׳ ׳ ׳׳™׳¨ ׳‘׳–׳”׳™׳¨׳•׳×
-            int intValue = 0;
-            if (value instanceof Number) {
-                intValue = ((Number) value).intValue();
-            }
-            bytes[i] = (byte) intValue;
-        }
-        return bytes;
-    }
 }

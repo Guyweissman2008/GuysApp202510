@@ -288,69 +288,39 @@ public class AddRecipeActivity extends BaseActivity {
 
 
     private void loadRecipeForEditing(String recipeId) {
-        FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot document) {
-                if (!document.exists()) return;
+        FBRef.refRecipes.document(recipeId).get()
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot document) {
 
-                // ׳©׳׳™׳₪׳× ׳”׳׳™׳“׳¢ ׳”׳’׳•׳׳׳™ ׳©׳ ׳”׳×׳׳•׳ ׳” ׳›׳“׳™ ׳׳‘׳“׳•׳§ ׳׳× ׳”׳¡׳•׳’ ׳©׳׳•
-                Object imageDataObject = document.get("imageData");
-                Bitmap loadedBitmap = null;
+                        if (!document.exists()) return;
 
-                if (imageDataObject instanceof com.google.firebase.firestore.Blob) {
-                    // ׳₪׳•׳¨׳׳˜ ׳—׳“׳© - Blob
-                    loadedBitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageDataObject);
-                } else if (imageDataObject instanceof List) {
-                    // ׳₪׳•׳¨׳׳˜ ׳™׳©׳ - List<Integer>
-                    loadedBitmap = ImageHelper.decodeFirestoreData((List<?>) imageDataObject);
-                }
+                        Recipe recipe = document.toObject(Recipe.class);
+                        if (recipe == null) return;
 
-                // ׳¢׳›׳©׳™׳• ׳ ׳˜׳¢׳ ׳׳× ׳©׳׳¨ ׳”׳׳•׳‘׳™׳™׳§׳˜
-                Recipe recipe = document.toObject(Recipe.class);
-                if (recipe != null) {
-                    editTitle.setText(recipe.getTitle());
-                    editDescription.setText(recipe.getDescription());
-                    editPrepTime.setText(recipe.getPreparationTime());
+                        editTitle.setText(recipe.getTitle());
+                        editDescription.setText(recipe.getDescription());
+                        editPrepTime.setText(recipe.getPreparationTime());
 
-                    // ׳¢׳“׳›׳•׳ ׳”׳¡׳₪׳™׳ ׳¨
-                    selectedCategory = recipe.getCategory();
-                    ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
-                    if (adapter != null) {
-                        spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
+                        selectedCategory = recipe.getCategory();
+
+                        ArrayAdapter<CharSequence> adapter =
+                                (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
+
+                        if (adapter != null && selectedCategory != null) {
+                            spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
+                        }
+
+                        if (recipe.getImageData() != null) {
+                            selectedBitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
+                            if (selectedBitmap != null) {
+                                imageRecipe.setImageBitmap(selectedBitmap);
+                            }
+                        }
+
+                        btnSave.setText("Update Recipe");
                     }
-
-                    // ׳”׳¦׳’׳× ׳”׳×׳׳•׳ ׳” ׳©׳₪׳¢׳ ׳—׳ ׳• (׳‘׳™׳ ׳׳ ׳”׳™׳™׳×׳” Blob ׳׳• List)
-                    if (loadedBitmap != null) {
-                        selectedBitmap = loadedBitmap;
-                        imageRecipe.setImageBitmap(selectedBitmap);
-                    }
-                    btnSave.setText("Update Recipe");
-                }
-            }
-        });
-    }
-
-    private void NEW_loadRecipeForEditing(String recipeId) {
-        FBRef.refRecipes.document(recipeId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot document) {
-                if (!document.exists()) return;
-                Recipe recipe = document.toObject(Recipe.class);
-                if (recipe == null) return;
-                editTitle.setText(recipe.getTitle());
-                editDescription.setText(recipe.getDescription());
-                editPrepTime.setText(recipe.getPreparationTime());
-                selectedCategory = recipe.getCategory();
-                ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
-                spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
-                if (recipe.getImageData() != null) {
-                    // ׳˜׳¢׳™׳ ׳× Blob
-                    selectedBitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
-                    imageRecipe.setImageBitmap(selectedBitmap);
-                }
-                btnSave.setText("Update Recipe");
-            }
-        });
+                });
     }
 
     @Override
@@ -358,10 +328,8 @@ public class AddRecipeActivity extends BaseActivity {
         if (imageRecipe != null) {
             imageRecipe.setImageDrawable(null);
         }
-
         selectedBitmap = null;
         cameraImageUri = null;
-
         super.onDestroy();
     }
 }

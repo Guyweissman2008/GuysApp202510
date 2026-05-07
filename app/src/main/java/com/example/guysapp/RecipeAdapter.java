@@ -130,52 +130,23 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     private void bindImage(@NonNull RecipeViewHolder holder, Recipe recipe) {
+
         if (recipe == null || recipe.getImageData() == null) {
             holder.image.setImageResource(R.mipmap.ic_launcher_round);
             return;
         }
 
-        Object imageData = recipe.getImageData();
+        try {
+            Bitmap bitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
 
-        // ׳”׳’׳ ׳”: ׳׳ ׳–׳” ׳¨׳©׳™׳׳” (׳”׳₪׳•׳¨׳׳˜ ׳”׳™׳©׳ ׳•׳”׳›׳‘׳“), ׳₪׳©׳•׳˜ ׳ ׳©׳™׳ ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳•׳׳ ׳ ׳˜׳¢׳ ׳׳–׳™׳›׳¨׳•׳
-        if (imageData instanceof java.util.List) {
-            holder.image.setImageResource(R.mipmap.ic_launcher_round);
-            android.util.Log.w("RecipeAdapter", "Skipping heavy legacy List data for: " + recipe.getTitle());
-            return;
-        }
-
-        // ׳¨׳§ ׳׳ ׳–׳” Blob (׳”׳₪׳•׳¨׳׳˜ ׳”׳—׳“׳© ׳•׳”׳™׳¢׳™׳) ׳ ׳׳©׳™׳ ׳׳₪׳¢׳ ׳•׳—
-        if (imageData instanceof com.google.firebase.firestore.Blob) {
-            try {
-                Bitmap bitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageData);
-                if (bitmap != null) {
-                    holder.image.setImageBitmap(bitmap);
-                }
-            } catch (Exception e) {
+            if (bitmap != null) {
+                holder.image.setImageBitmap(bitmap);
+            } else {
                 holder.image.setImageResource(R.mipmap.ic_launcher_round);
             }
-        }
-    }
 
-    private void NEW_bindImage(@NonNull RecipeViewHolder holder, Recipe recipe) {
-        // ׳‘׳“׳™׳§׳” ׳”׳׳ ׳§׳™׳™׳ ׳׳™׳“׳¢ ׳‘׳™׳ ׳׳¨׳™ (Blob)
-        if (recipe != null && recipe.getImageData() != null) {
-            try {
-                // ׳©׳™׳׳•׳© ׳‘-Helper ׳”׳—׳“׳© ׳׳₪׳¢׳ ׳•׳— ׳׳”׳™׳¨ ׳©׳ Blob ׳-Bitmap
-                Bitmap bitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
-
-                if (bitmap != null) {
-                    holder.image.setImageBitmap(bitmap);
-                } else {
-                    // ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳ ׳”׳₪׳¢׳ ׳•׳— ׳ ׳›׳©׳
-                    holder.image.setImageResource(R.mipmap.ic_launcher_round);
-                }
-            } catch (Exception e) {
-                android.util.Log.e("RecipeAdapter", "Error decoding image: " + e.getMessage());
-                holder.image.setImageResource(R.mipmap.ic_launcher_round);
-            }
-        } else {
-            // ׳×׳׳•׳ ׳× ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳ ׳׳™׳ ׳×׳׳•׳ ׳” ׳›׳׳
+        } catch (Exception e) {
+            android.util.Log.e("RecipeAdapter", "Error decoding image", e);
             holder.image.setImageResource(R.mipmap.ic_launcher_round);
         }
     }
