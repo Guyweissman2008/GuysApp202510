@@ -82,7 +82,6 @@ public class ProfileActivity extends BaseActivity {
     protected void onStop() {
         super.onStop();
         Log.d("ProfileActivity", "onStop called");
-
         removeListener(myRecipesListener);      // ׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™ (refRecipes ׳׳₪׳™ userId)
         removeListener(savedRecipesListener);   // ׳¨׳©׳™׳׳× ׳”׳©׳׳•׳¨׳™׳ (refSavedRecipes)
         removeListener(savedRecipeIdsForHeartsListener); // IDs ׳©׳ ׳©׳׳•׳¨׳™׳ ׳‘׳©׳‘׳™׳ ׳׳‘׳‘׳•׳×
@@ -91,8 +90,6 @@ public class ProfileActivity extends BaseActivity {
         }
         savedRecipeDocListeners.clear();
     }
-
-
     private void initViews() {
         profileImage = findViewById(R.id.profile_image);
         tvFullName = findViewById(R.id.text_email);
@@ -102,13 +99,11 @@ public class ProfileActivity extends BaseActivity {
         buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
         progressBar = findViewById(R.id.progressBar);
     }
-
     private void setupRecyclerView() {
         recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(new ArrayList<>());
         recyclerViewRecipes.setAdapter(adapter);
     }
-
     private void setupListeners() {
         buttonMyRecipes.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -135,9 +130,7 @@ public class ProfileActivity extends BaseActivity {
             }
         });
     }
-
     private void initActivityResultLaunchers() {
-        // ׳”׳’׳“׳¨׳× ׳׳§׳‘׳ ׳”׳×׳•׳¦׳׳” ׳׳”׳’׳׳¨׳™׳”
         imagePickerLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -153,8 +146,6 @@ public class ProfileActivity extends BaseActivity {
                     }
                 }
         );
-
-        // ׳”׳’׳“׳¨׳× ׳׳§׳‘׳ ׳”׳×׳•׳¦׳׳” ׳׳”׳׳¦׳׳׳”
         cameraLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -190,51 +181,40 @@ public class ProfileActivity extends BaseActivity {
         });
         builder.show();
     }
-
     private void openCamera() {
         Intent takePictureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         cameraLauncher.launch(takePictureIntent);
     }
-
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         imagePickerLauncher.launch(intent);
     }
-
     private void removeListener(ListenerRegistration listener) {
         if (listener != null) {
             listener.remove();
         }
     }
-
     private void loadUserProfile() {
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
         if (currentUser == null) {
             Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
             return;
         }
-
         String userId = currentUser.getUid();
-
         adapter.setSavedScreen(!showingMyRecipes);
         adapter.setShowDelete(true);
         adapter.setCurrentUserID(userId);
-
         setLoading(true);
-
         FBRef.refUsers.document(userId).get()
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
                         setLoading(false);
-
                         if (documentSnapshot == null || !documentSnapshot.exists()) {
                             return;
                         }
-
                         setProfileImageIfExists(documentSnapshot);
                         setFullName(documentSnapshot);
-
                         loadMyRecipesRealtime(userId);
                         loadSavedRecipesRealtime(userId);
                         loadSavedRecipeIdsForHearts(userId);
@@ -250,34 +230,22 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
-
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-        // 1. ׳ ׳©׳׳•׳£ ׳׳× ׳”׳׳™׳“׳¢ ׳›׳׳•׳‘׳™׳™׳§׳˜ ׳›׳׳׳™ (׳™׳›׳•׳ ׳׳”׳™׳•׳× Blob ׳׳• ArrayList)
         Object imageDataObj = documentSnapshot.get("imageData");
-
         if (imageDataObj == null) return;
-
         Bitmap bitmap = null;
-
-        // 2. ׳ ׳‘׳“׳•׳§ ׳׳ ׳–׳” ׳”׳₪׳•׳¨׳׳˜ ׳”׳—׳“׳© (Blob)
         if (imageDataObj instanceof com.google.firebase.firestore.Blob) {
             bitmap = ImageHelper.decodeBlobToBitmap((com.google.firebase.firestore.Blob) imageDataObj);
         }
-        // 3. ׳ ׳‘׳“׳•׳§ ׳׳ ׳–׳” ׳”׳₪׳•׳¨׳׳˜ ׳”׳™׳©׳ (ArrayList/List)
         else if (imageDataObj instanceof java.util.List) {
             bitmap = ImageHelper.decodeFirestoreData((java.util.List<?>) imageDataObj);
         }
-
-        // 4. ׳׳ ׳”׳¦׳׳—׳ ׳• ׳׳™׳™׳¦׳¨ ׳×׳׳•׳ ׳” ׳׳׳—׳“ ׳”׳₪׳•׳¨׳׳˜׳™׳ - ׳ ׳¦׳™׳’ ׳׳•׳×׳”
         if (bitmap != null) {
             profileImage.setImageBitmap(bitmap);
         }
     }
-
     private void NEW_setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
-        // ׳©׳׳™׳₪׳” ׳™׳©׳™׳¨׳” ׳›-Blob
         com.google.firebase.firestore.Blob imageBlob = documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
-
         if (imageBlob != null) {
             Bitmap bitmap = ImageHelper.decodeBlobToBitmap(imageBlob);
             if (bitmap != null) {
@@ -285,133 +253,90 @@ public class ProfileActivity extends BaseActivity {
             }
         }
     }
-
     private void setFullName(DocumentSnapshot documentSnapshot) {
         String firstName = documentSnapshot.getString("firstName");
         String lastName = documentSnapshot.getString("lastName");
         tvFullName.setText(((firstName != null ? firstName : "") + " " +
                 (lastName != null ? lastName : "")).trim());
     }
-
     private void loadMyRecipesRealtime(String userId) {
-        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳׳׳–׳™׳ ׳™׳ ׳›׳₪׳•׳׳™׳
         removeListener(myRecipesListener);
-
-        // ׳׳׳–׳™׳ RealTime ׳׳›׳ ׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳”׳׳©׳×׳׳© ׳™׳¦׳¨
         myRecipesListener = FBRef.refRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳׳×׳›׳•׳ ׳™׳ ׳©׳ ׳”׳׳©׳×׳׳© (׳”׳•׳¡׳₪׳” / ׳¢׳“׳›׳•׳ / ׳׳—׳™׳§׳”)
-                    // ׳׳₪׳¢׳™׳ ׳׳—׳“׳© ׳׳× onEvent ׳¢׳ snapshot ׳¢׳“׳›׳ ׳™
                     public void onEvent(@Nullable QuerySnapshot snapshot,
                                         @Nullable FirebaseFirestoreException e) {
-
                         if (e != null || snapshot == null)
                             return;
-
-                        // ׳׳×׳—׳™׳׳™׳ ׳׳¨׳©׳™׳׳” ׳ ׳§׳™׳™׳” ג€“ ׳×׳׳•׳ ׳” ׳—׳“׳©׳” ׳©׳ "׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™"
                         myRecipes.clear();
-
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
                             Recipe recipe = doc.toObject(Recipe.class);
                             if (recipe != null) {
-                                // ׳©׳׳™׳¨׳× ׳”ײ¾id ׳©׳ ׳”׳׳¡׳׳ ׳‘׳×׳•׳ ׳”׳׳•׳‘׳™׳™׳§׳˜
                                 recipe.setRecipeId(doc.getId());
                                 myRecipes.add(recipe);
                             }
                         }
-
-                        // ׳¢׳“׳›׳•׳ ׳”׳׳¡׳ ׳¨׳§ ׳׳ ׳”׳׳©׳×׳׳© ׳ ׳׳¦׳ ׳‘׳×׳¦׳•׳’׳× "׳”׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™"
                         if (showingMyRecipes) {
                             adapter.updateList(myRecipes);
                         }
                     }
                 });
     }
-
-
     private void loadSavedRecipesRealtime(String userId) {
-        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳”׳¦׳˜׳‘׳¨׳•׳× ׳׳׳–׳™׳ ׳™׳
         removeListener(savedRecipesListener);
-
-        // ׳׳׳–׳™׳ RealTime ׳׳¨׳©׳™׳׳× ׳”ײ¾SavedRecipes ׳©׳ ׳”׳׳©׳×׳׳©
         savedRecipesListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳©׳׳™׳¨׳” / ׳”׳¡׳¨׳” ׳©׳ ׳׳×׳›׳•׳
-                    // ׳׳₪׳¢׳™׳ ׳׳—׳“׳© ׳׳× onEvent ׳¢׳ snapshot ׳¢׳“׳›׳ ׳™
                     public void onEvent(@Nullable QuerySnapshot snapshot,
                                         @Nullable FirebaseFirestoreException e) {
-
                         if (e != null || snapshot == null)
                             return;
-
-                        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳™׳ ׳§׳•׳“׳׳™׳ ׳©׳ ׳׳¡׳׳›׳™ ׳׳×׳›׳•׳ ׳™׳
                         for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
                             removeListener(lr);
                         }
                         savedRecipeDocListeners.clear();
-
-                        // ׳׳×׳—׳™׳׳™׳ ׳׳¨׳©׳™׳׳” ׳¨׳™׳§׳” ג€“ snapshot ׳—׳“׳©
                         savedRecipes.clear();
                         if (!showingMyRecipes)
                             adapter.updateList(savedRecipes);
-
                         if (snapshot.isEmpty())
                             return;
-
                         for (DocumentSnapshot savedDoc : snapshot.getDocuments()) {
                             SavedRecipe saved = savedDoc.toObject(SavedRecipe.class);
                             if (saved == null)
                                 continue;
-
                             String rid = saved.getRecipeId();
                             if (rid == null || rid.trim().isEmpty())
                                 continue;
-
-                            // ׳׳׳–׳™׳ RealTime ׳׳׳¡׳׳ ׳”׳׳×׳›׳•׳ ׳”׳׳§׳•׳¨׳™
                             ListenerRegistration lr = FBRef.refRecipes.document(rid)
                                     .addSnapshotListener(new EventListener<DocumentSnapshot>() {
                                         @Override
-                                        // ׳›׳ ׳©׳™׳ ׳•׳™ ׳‘׳׳×׳›׳•׳ ׳¢׳¦׳׳• (׳¢׳“׳›׳•׳ / ׳׳—׳™׳§׳”)
                                         public void onEvent(@Nullable DocumentSnapshot recipeDoc,
                                                             @Nullable FirebaseFirestoreException err) {
 
                                             if (err != null || recipeDoc == null)
                                                 return;
-
-                                            // ׳׳ ׳”׳׳×׳›׳•׳ ׳”׳׳§׳•׳¨׳™ ׳ ׳׳—׳§ ג€“ ׳׳¡׳™׳¨׳™׳ ׳׳•׳×׳• ׳׳”׳©׳׳•׳¨׳™׳
                                             if (!recipeDoc.exists()) {
                                                 removeRecipeFromSavedList(rid);
                                                 if (!showingMyRecipes)
                                                     adapter.updateList(savedRecipes);
                                                 return;
                                             }
-
-                                            // ׳”׳׳×׳›׳•׳ ׳§׳™׳™׳ ג€“ ׳¢׳“׳›׳•׳ / ׳”׳•׳¡׳₪׳” ׳׳¨׳©׳™׳׳× ׳”׳©׳׳•׳¨׳™׳
                                             Recipe r = recipeDoc.toObject(Recipe.class);
                                             if (r == null)
                                                 return;
-
                                             r.setRecipeId(recipeDoc.getId());
                                             upsertSavedRecipe(r);
-
-                                            // ׳¢׳“׳›׳•׳ ׳׳¡׳ ׳¨׳§ ׳׳ ׳ ׳׳¦׳׳™׳ ׳‘׳×׳¦׳•׳’׳× Saved
                                             if (!showingMyRecipes)
                                                 adapter.updateList(savedRecipes);
                                         }
                                     });
-
-                            // ׳©׳׳™׳¨׳× ׳”׳׳׳–׳™׳ ׳›׳“׳™ ׳©׳ ׳•׳›׳ ׳׳¡׳’׳•׳¨ ׳׳•׳×׳• ׳‘׳”׳׳©׳
                             savedRecipeDocListeners.put(rid, lr);
                         }
                     }
                 });
     }
-
-
     private void upsertSavedRecipe(Recipe updated) {
         if (updated == null || updated.getRecipeId() == null)
             return;
@@ -425,11 +350,9 @@ public class ProfileActivity extends BaseActivity {
         }
         savedRecipes.add(updated);
     }
-
     private void removeRecipeFromSavedList(String recipeId) {
         if (recipeId == null)
             return;
-
         for (int i = 0; i < savedRecipes.size(); i++) {
             Recipe recipe = savedRecipes.get(i);
             if (recipe != null && recipeId.equals(recipe.getRecipeId())) {
@@ -438,91 +361,66 @@ public class ProfileActivity extends BaseActivity {
             }
         }
     }
-
-
     private void loadSavedRecipeIdsForHearts(String userId) {
-        // ׳¡׳’׳™׳¨׳× ׳׳׳–׳™׳ ׳§׳•׳“׳ ׳›׳“׳™ ׳׳׳ ׳•׳¢ ׳›׳₪׳™׳׳•׳™׳•׳×
         removeListener(savedRecipeIdsForHeartsListener);
-
-        // ׳׳׳–׳™׳ RealTime ׳׳¨׳©׳™׳׳× ׳”׳׳×׳›׳•׳ ׳™׳ ׳”׳©׳׳•׳¨׳™׳ ׳©׳ ׳”׳׳©׳×׳׳©
-        // ׳׳©׳׳© ׳¨׳§ ׳׳¦׳•׳¨׳ ׳¡׳™׳׳•׳ ׳׳‘׳‘׳•׳× (Saved / Not Saved)
         savedRecipeIdsForHeartsListener = FBRef.refSavedRecipes
                 .whereEqualTo("userId", userId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    // ׳›׳ ׳©׳׳™׳¨׳” ׳׳• ׳”׳¡׳¨׳” ׳©׳ ׳׳×׳›׳•׳
-                    // ׳׳¢׳“׳›׳ ׳× ׳׳× ׳¡׳˜ ׳”ײ¾IDs ׳©׳ ׳”׳׳‘׳‘׳•׳×
                     public void onEvent(@Nullable QuerySnapshot snapshots,
                                         @Nullable FirebaseFirestoreException e) {
-
                         if (e != null || snapshots == null) {
-                            // ׳‘׳׳§׳¨׳” ׳©׳ ׳©׳’׳™׳׳” ג€“ ׳׳׳₪׳¡׳™׳ ׳׳‘׳‘׳•׳×
                             adapter.setSavedIds(new HashSet<>());
                             return;
                         }
                         Set<String> ids = new HashSet<>();
-
                         for (DocumentSnapshot doc : snapshots.getDocuments()) {
                             SavedRecipe saved = doc.toObject(SavedRecipe.class);
                             if (saved == null)
                                 continue;
-
                             String rid = saved.getRecipeId();
                             if (rid == null)
                                 continue;
-
                             rid = rid.trim();
                             if (!rid.isEmpty()) {
                                 ids.add(rid);
                             }
                         }
-
-                        // ׳¢׳“׳›׳•׳ ׳”׳׳“׳₪׳˜׳¨ ׳׳™׳׳• ׳׳×׳›׳•׳ ׳™׳ ׳׳¡׳•׳׳ ׳™׳ ׳›ײ¾Saved
                         adapter.setSavedIds(ids);
                     }
                 });
     }
-
-
     private void showMyRecipes() {
         showingMyRecipes = true;
         adapter.setSavedScreen(false);
         adapter.setShowDelete(true);
         adapter.updateList(myRecipes);
     }
-
     private void showSavedRecipes() {
         showingMyRecipes = false;
         adapter.setSavedScreen(true);
         adapter.setShowDelete(true);
         adapter.updateList(savedRecipes);
     }
-
     private void showEditProfileDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
         builder.setTitle("Edit Profile");
-
         tempSelectedImageUri = null;
         tempSelectedBitmap = null;
         android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 10);
         layout.setGravity(Gravity.CENTER_HORIZONTAL);
-
-        // --- ׳×׳׳•׳ ׳” ---
         dialogProfileImageView = new ImageView(this);
         android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(250, 250);
         params.setMargins(0, 0, 0, 30);
         dialogProfileImageView.setLayoutParams(params);
         dialogProfileImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
         if (profileImage.getDrawable() != null) {
             dialogProfileImageView.setImageDrawable(profileImage.getDrawable());
         } else {
             dialogProfileImageView.setImageResource(R.drawable.ic_launcher_background);
         }
-
         dialogProfileImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -530,65 +428,48 @@ public class ProfileActivity extends BaseActivity {
             }
         });
         layout.addView(dialogProfileImageView);
-
         TextView clickToChange = new TextView(this);
         clickToChange.setText("Tap image to change");
         clickToChange.setGravity(Gravity.CENTER);
         layout.addView(clickToChange);
-
         final EditText inputFirstName = new EditText(this);
         inputFirstName.setHint("first name");
-
         final EditText inputLastName = new EditText(this);
         inputLastName.setHint("last name");
-
         fillNameFromTextView(inputFirstName, inputLastName);
-
         layout.addView(inputFirstName);
         layout.addView(inputLastName);
-
         builder.setView(layout);
-
         builder.setPositiveButton("save", null);
-
         builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
             }
         });
-
         AlertDialog dialog = builder.create();
         dialog.show();
-
         Button positiveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         positiveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String newFirst = inputFirstName.getText().toString().trim();
                 String newLast = inputLastName.getText().toString().trim();
-
                 if (newFirst.isEmpty() || newLast.isEmpty()) {
                     Toast.makeText(ProfileActivity.this, "Please enter your full name", Toast.LENGTH_SHORT).show();
                     return; // ׳”׳“׳™׳׳׳•׳’ ׳׳ ׳™׳™׳¡׳’׳¨
                 }
-
                 saveProfileChanges(newFirst, newLast, dialog, positiveBtn);
             }
         });
     }
-
-
-    //׳׳ ׳™ ׳׳₪׳¨׳™׳“׳” ׳©׳•׳‘ ׳׳× ׳”׳©׳ ׳”׳׳׳ ׳›׳“׳™ ׳׳׳₪׳©׳¨ ׳׳׳©׳×׳׳© ׳׳¢׳¨׳•׳ ׳¨׳§ ׳׳—׳“ ׳׳”׳,׳׳×׳™ ׳©׳”׳“׳™׳׳׳•׳’ ׳ ׳₪׳×׳—.
     private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
         String currentFullName = tvFullName.getText().toString().trim();
         if (currentFullName.isEmpty())
             return;
-
         String[] parts = currentFullName.split(" ");
         if (parts.length > 0)
             etFirstName.setText(parts[0]);
-
         if (parts.length > 1) {
             StringBuilder lastNameBuilder = new StringBuilder();
             for (int i = 1; i < parts.length; i++) {
@@ -597,7 +478,6 @@ public class ProfileActivity extends BaseActivity {
             etLastName.setText(lastNameBuilder.toString().trim());
         }
     }
-    // ׳©׳׳™׳₪׳× ׳”׳˜׳§׳¡׳˜ ׳©׳”׳׳©׳×׳׳© ׳”׳§׳׳™׳“ ׳•׳©׳׳™׳—׳” ׳׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳”׳©׳׳™׳¨׳” ׳‘׳₪׳™׳™׳¨׳‘׳™׳™׳¡
     private void saveProfileChanges(String firstName, String lastName, AlertDialog dialog, Button btnSave) {
         setSavingState(true, btnSave);
         FirebaseUser user = FBRef.mAuth.getCurrentUser();
@@ -606,21 +486,16 @@ public class ProfileActivity extends BaseActivity {
             return;
         }
         String userId = user.getUid();
-        // ׳—׳™׳‘׳•׳¨ ׳”׳©׳ ׳”׳₪׳¨׳˜׳™ ׳•׳©׳ ׳”׳׳©׳₪׳—׳” ׳׳׳—׳¨׳•׳–׳× ׳׳—׳×
         String fullName = firstName + " " + lastName;
-
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
-        //  ׳׳©׳׳™׳¨׳” ׳‘׳₪׳™׳™׳¨׳¡׳•׳¨ ׳‘׳©׳“׳•׳× ׳ ׳₪׳¨׳“׳™׳ ׳›׳“׳™ ׳׳©׳׳•׳¨ ׳¢׳ ׳¡׳“׳¨
         updates.put("firstName", firstName);
         updates.put("lastName", lastName);
-        // ׳‘׳×׳•׳ saveProfileChanges...
         if (tempSelectedImageUri != null || tempSelectedBitmap != null) {
             try {
                 com.google.firebase.firestore.Blob newImageBlob; // ׳©׳™׳ ׳•׳™ ׳-Blob
 
                 if (tempSelectedImageUri != null) {
                     Bitmap galleryBitmap = ImageHelper.loadBitmapFromUri(this, tempSelectedImageUri);
-                    // ׳©׳™׳׳•׳© ׳‘-bitmapToBlob ׳”׳—׳“׳©
                     newImageBlob = ImageHelper.bitmapToBlob(this, galleryBitmap, ImageHelper.SMALL_IMAGE);
                 } else {
                     newImageBlob = ImageHelper.bitmapToBlob(this, tempSelectedBitmap, ImageHelper.SMALL_IMAGE);
@@ -639,30 +514,20 @@ public class ProfileActivity extends BaseActivity {
                     @Override
                     public void onSuccess(Void aVoid) {
                         tvFullName.setText(fullName);
-
-                        // ---> ׳›׳׳ ׳©׳׳™׳ ׳׳× ׳”׳§׳•׳“ <---
-                        // 2. ׳¢׳“׳›׳•׳ ׳”׳×׳׳•׳ ׳” ׳‘׳׳¡׳ (׳׳ ׳”׳©׳×׳ ׳×׳”)
                         if (tempSelectedImageUri != null) {
                             profileImage.setImageURI(tempSelectedImageUri);
                         } else if (tempSelectedBitmap != null) {
                             profileImage.setImageBitmap(tempSelectedBitmap);
                         }
-                        // -----------------------------
-
-                        // --- ׳”׳×׳™׳§׳•׳: ׳¢׳“׳›׳•׳ ׳׳™׳™׳“׳™ ׳©׳ ׳”׳¨׳©׳™׳׳” ׳”׳׳§׳•׳׳™׳× ׳‘׳׳¡׳ ׳”׳₪׳¨׳•׳₪׳™׳ ---
                         for (Recipe recipe : myRecipes) {
                             recipe.setUsername(fullName);
                         }
-                        // ׳׳¢׳“׳›׳ ׳™׳ ׳’׳ ׳׳× ׳”׳©׳׳•׳¨׳™׳ ׳׳׳§׳¨׳” ׳©׳׳ ׳—׳ ׳• ׳‘׳׳¡׳ ׳”׳©׳׳•׳¨׳™׳
                         for (Recipe recipe : savedRecipes) {
                             recipe.setUsername(fullName);
                         }
-                        // ׳׳•׳“׳™׳¢׳™׳ ׳׳׳“׳₪׳˜׳¨ ׳©׳”׳׳™׳“׳¢ ׳”׳©׳×׳ ׳” ׳›׳“׳™ ׳©׳™׳¦׳™׳™׳¨ ׳׳—׳“׳© ׳׳× ׳”׳©׳׳•׳×
                         if (adapter != null) {
                             adapter.notifyDataSetChanged();
                         }
-
-                        // 3. ׳¢׳“׳›׳•׳ ׳׳¡׳“ ׳”׳ ׳×׳•׳ ׳™׳ ׳¢׳‘׳•׳¨ ׳׳¡׳ ׳”׳‘׳™׳× ׳•׳©׳׳¨ ׳”׳׳©׳×׳׳©׳™׳
                         updateRecipeAuthorNameInDatabase(userId, fullName);
                         setSavingState(false, btnSave);
                         dialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
@@ -671,15 +536,10 @@ public class ProfileActivity extends BaseActivity {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // ׳׳—׳–׳™׳¨׳™׳ UI ׳׳׳¦׳‘ ׳¨׳’׳™׳ (׳׳₪׳¡׳™׳§׳™׳ ׳˜׳¢׳™׳ ׳” ׳•׳׳׳₪׳©׳¨׳™׳ ׳׳׳—׳•׳¥ ׳©׳•׳‘)
                         setSavingState(false, btnSave);
-
-                        // ׳׳ ׳”׳™׳™׳×׳” ׳×׳׳•׳ ׳” ׳©׳ ׳‘׳—׳¨׳” ׳׳“׳™׳׳׳•׳’ ג€“ ׳׳—׳–׳™׳¨׳™׳ ׳׳×׳׳•׳ ׳” ׳”׳§׳•׳“׳׳×
-                        // (׳›׳“׳™ ׳׳ ׳׳”׳™׳©׳׳¨ ׳‘׳׳¦׳‘ "׳—׳¦׳™ ׳ ׳‘׳—׳¨" ׳׳—׳¨׳™ ׳›׳©׳ ׳‘׳©׳׳™׳¨׳”)
                         if (tempSelectedImageUri != null) {
                             resetDialogImageToCurrentProfile();
                         }
-
                         Toast.makeText(ProfileActivity.this,
                                 "Save failed. Please try again.",
                                 Toast.LENGTH_SHORT).show();
@@ -704,10 +564,7 @@ public class ProfileActivity extends BaseActivity {
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        // ׳©׳׳‘ ׳’: ׳¢׳“׳›׳•׳ ׳׳×׳›׳•׳ ׳™׳ ׳©׳׳•׳¨׳™׳ (SavedRecipes)
-                                        // ׳׳ ׳©׳׳¨׳• ׳׳×׳›׳•׳ ׳©׳׳, ׳¦׳¨׳™׳ ׳׳¢׳“׳›׳ ׳©׳ ׳׳× ׳”-AuthorName ׳›׳“׳™ ׳©׳™׳¨׳׳• ׳׳× ׳”׳©׳ ׳”׳—׳“׳©
                                         updateSavedRecipeAuthorNameInDatabase(userId, newFullName);
-
                                     }
                                 }).addOnFailureListener(new OnFailureListener() {
                                     @Override
@@ -741,10 +598,8 @@ public class ProfileActivity extends BaseActivity {
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
-                        // ׳׳ ׳• ׳׳©׳×׳׳©׳™׳ ׳‘-WriteBatch ׳›׳“׳™ ׳׳¢׳©׳•׳× ׳”׳¨׳‘׳” ׳¢׳“׳›׳•׳ ׳™׳ ׳‘׳‘׳× ׳׳—׳× ׳‘׳¦׳•׳¨׳” ׳™׳¢׳™׳׳”
                         WriteBatch batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch();
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            // ׳‘׳•׳“׳§׳™׳ ׳׳™׳ ׳§׳•׳¨׳׳™׳ ׳׳©׳“׳” ׳׳¦׳׳ ׳‘-SavedRecipe. ׳‘׳“׳¨׳ ׳›׳׳ authorName
                             batch.update(doc.getReference(), "authorName", newFullName);
                         }
                         batch.commit().addOnSuccessListener(aVoid -> {
@@ -773,8 +628,6 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
-
-
     private void setLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
