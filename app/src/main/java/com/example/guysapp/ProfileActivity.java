@@ -434,13 +434,8 @@ public class ProfileActivity extends BaseActivity {
 
         editProfileDialog.show();
     }
-    private void saveProfileChanges(
-            String firstName,
-            String lastName
-    ) {
-        setSavingState(
-                true,
-                editProfileDialog.getSaveButton()
+    private void saveProfileChanges(String firstName, String lastName) {
+        setSavingState(true, editProfileDialog.getSaveButton()
         );
         FirebaseUser user = FBRef.mAuth.getCurrentUser();
         if (user == null) {
@@ -456,7 +451,6 @@ public class ProfileActivity extends BaseActivity {
         if (tempSelectedImageUri != null || tempSelectedBitmap != null) {
             try {
                 com.google.firebase.firestore.Blob newImageBlob; // ׳©׳™׳ ׳•׳™ ׳-Blob
-
                 if (tempSelectedImageUri != null) {
                     Bitmap galleryBitmap = ImageHelper.loadBitmapFromUri(this, tempSelectedImageUri);
                     newImageBlob = ImageHelper.bitmapToBlob(this, galleryBitmap, ImageHelper.SMALL_IMAGE);
@@ -487,7 +481,9 @@ public class ProfileActivity extends BaseActivity {
                             recipe.setUsername(fullName);
                         }
                         for (Recipe recipe : savedRecipes) {
-                            recipe.setUsername(fullName);
+                            if (userId.equals(recipe.getUserId())) {
+                                recipe.setUsername(fullName);
+                            }
                         }
                         if (adapter != null) {
                             adapter.notifyDataSetChanged();
