@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,6 +47,7 @@ public class ProfileActivity extends BaseActivity {
     private ProgressBar progressBar;
     private ImageView buttonEditProfile;
     private ImageView dialogProfileImageView;
+    private EditProfileDialog editProfileDialog;
     private android.net.Uri tempSelectedImageUri;
     private androidx.activity.result.ActivityResultLauncher<android.content.Intent> imagePickerLauncher;
     private RecipeAdapter adapter;
@@ -166,17 +168,19 @@ public class ProfileActivity extends BaseActivity {
         );
     }
     private void showImageSourceDialog() {
-        String[] options = {"Choose from Gallery", "Take Photo"};
+
+        String[] options = {"Choose from Gallery", "Take Photo", "Cancel"};
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose Image Source");
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (which == 0) {
-                    openGallery();
-                } else if (which == 1) {
-                    openCamera();
-                }
+        builder.setItems(options, (dialog, which) -> {
+            if (which == 0) {
+                openGallery();
+            } else if (which == 1) {
+                openCamera();
+
+            } else if (which == 2) {
+                dialog.dismiss();
             }
         });
         builder.show();
@@ -402,87 +406,57 @@ public class ProfileActivity extends BaseActivity {
         adapter.setShowDelete(true);
         adapter.updateList(savedRecipes);
     }
+
     private void showEditProfileDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Edit Profile");
+
         tempSelectedImageUri = null;
         tempSelectedBitmap = null;
-        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
-        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 10);
-        layout.setGravity(Gravity.CENTER_HORIZONTAL);
-        dialogProfileImageView = new ImageView(this);
-        android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(250, 250);
-        params.setMargins(0, 0, 0, 30);
-        dialogProfileImageView.setLayoutParams(params);
-        dialogProfileImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        if (profileImage.getDrawable() != null) {
-            dialogProfileImageView.setImageDrawable(profileImage.getDrawable());
-        } else {
-            dialogProfileImageView.setImageResource(R.drawable.ic_launcher_background);
-        }
-        dialogProfileImageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showImageSourceDialog(); // ׳׳₪׳¢׳™׳ ׳׳× ׳—׳׳•׳ ׳™׳× ׳”׳‘׳—׳™׳¨׳”
-            }
-        });
-        layout.addView(dialogProfileImageView);
-        TextView clickToChange = new TextView(this);
-        clickToChange.setText("Tap image to change");
-        clickToChange.setGravity(Gravity.CENTER);
-        layout.addView(clickToChange);
-        final EditText inputFirstName = new EditText(this);
-        inputFirstName.setHint("first name");
-        final EditText inputLastName = new EditText(this);
-        inputLastName.setHint("last name");
-        fillNameFromTextView(inputFirstName, inputLastName);
-        layout.addView(inputFirstName);
-        layout.addView(inputLastName);
-        builder.setView(layout);
-        builder.setPositiveButton("save", null);
-        builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        Button positiveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        positiveBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String newFirst = inputFirstName.getText().toString().trim();
-                String newLast = inputLastName.getText().toString().trim();
-                if (newFirst.isEmpty() || newLast.isEmpty()) {
-                    Toast.makeText(ProfileActivity.this, "Please enter your full name", Toast.LENGTH_SHORT).show();
-                    return; // ׳”׳“׳™׳׳׳•׳’ ׳׳ ׳™׳™׳¡׳’׳¨
+
+        Drawable currentDrawable = profileImage.getDrawable();
+
+        editProfileDialog = new EditProfileDialog(
+                this,
+                tvFullName.getText().toString(),
+                currentDrawable,
+
+                new EditProfileDialog.OnSaveClickListener() {
+                    @Override
+                    public void onSave(String firstName,
+                                       String lastName) {
+
+                        saveProfileChanges(
+                                firstName,
+                                lastName
+                        );
+                    }
+                },
+
+                new EditProfileDialog.OnImageClickListener() {
+                    @Override
+                    public void onImageClick() {
+
+                        showImageSourceDialog();
+                    }
                 }
-                saveProfileChanges(newFirst, newLast, dialog, positiveBtn);
-            }
-        });
+        );
+
+        dialogProfileImageView =
+                editProfileDialog.getImageView();
+
+        editProfileDialog.show();
     }
-    private void fillNameFromTextView(EditText etFirstName, EditText etLastName) {
-        String currentFullName = tvFullName.getText().toString().trim();
-        if (currentFullName.isEmpty())
-            return;
-        String[] parts = currentFullName.split(" ");
-        if (parts.length > 0)
-            etFirstName.setText(parts[0]);
-        if (parts.length > 1) {
-            StringBuilder lastNameBuilder = new StringBuilder();
-            for (int i = 1; i < parts.length; i++) {
-                lastNameBuilder.append(parts[i]).append(" ");
-            }
-            etLastName.setText(lastNameBuilder.toString().trim());
-        }
-    }
-    private void saveProfileChanges(String firstName, String lastName, AlertDialog dialog, Button btnSave) {
-        setSavingState(true, btnSave);
+    private void saveProfileChanges(
+            String firstName,
+            String lastName
+    ) {
+        setSavingState(
+                true,
+                editProfileDialog.getSaveButton()
+        );
         FirebaseUser user = FBRef.mAuth.getCurrentUser();
         if (user == null) {
-            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();            setSavingState(false, btnSave);
+            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
+            setSavingState(false, editProfileDialog.getSaveButton());
             return;
         }
         String userId = user.getUid();
@@ -505,7 +479,8 @@ public class ProfileActivity extends BaseActivity {
                     updates.put("imageData", newImageBlob);
                 }
             } catch (Exception e) {
-                Toast.makeText(this, "Image processing failed", Toast.LENGTH_SHORT).show();                setSavingState(false, btnSave);
+                Toast.makeText(this, "Image processing failed", Toast.LENGTH_SHORT).show();
+                setSavingState(false, editProfileDialog.getSaveButton());
                 return;
             }
         }
@@ -529,14 +504,16 @@ public class ProfileActivity extends BaseActivity {
                             adapter.notifyDataSetChanged();
                         }
                         updateRecipeAuthorNameInDatabase(userId, fullName);
-                        setSavingState(false, btnSave);
-                        dialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
+                        setSavingState(
+                                false,
+                                editProfileDialog.getSaveButton()
+                        );                       editProfileDialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        setSavingState(false, btnSave);
+                        setSavingState(false, editProfileDialog.getSaveButton());
                         if (tempSelectedImageUri != null) {
                             resetDialogImageToCurrentProfile();
                         }
