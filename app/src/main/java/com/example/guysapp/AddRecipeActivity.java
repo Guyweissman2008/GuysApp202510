@@ -70,11 +70,10 @@ public class AddRecipeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_recipe);
-        //׳׳™׳•׳×׳¨
-        // setupBottomNavigation(R.id.nav_add);
         initViews();
         setupCategorySpinner();
         setupClickListeners();
+        setupBottomNavigation(R.id.nav_add);
         // ׳‘׳“׳™׳§׳” ׳׳ ׳¢׳“׳›׳•׳
         String recipeId = getIntent().getStringExtra("recipeId");
         if (recipeId != null && !recipeId.isEmpty()) {

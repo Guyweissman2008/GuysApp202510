@@ -51,7 +51,7 @@ public class BaseActivity extends AppCompatActivity {
 
     private <T extends AppCompatActivity> void navigateTo(Class<T> destination) {
         startActivity(new Intent(this, destination));
-        overridePendingTransition(0, 0);//׳›׳“׳™ ׳©׳׳ ׳×׳™׳”׳™׳” ׳׳ ׳™׳׳¦׳™׳”
+
         /////////////////////////////finish();
     }
     private void logoutUser() {
