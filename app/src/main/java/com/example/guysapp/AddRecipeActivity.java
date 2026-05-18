@@ -30,7 +30,6 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.List;
-
 public class AddRecipeActivity extends BaseActivity {
     private EditText editTitle, editDescription, editPrepTime;
     private ImageView imageRecipe;
@@ -40,7 +39,6 @@ public class AddRecipeActivity extends BaseActivity {
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
     private String selectedCategory = "";
-
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -74,7 +72,6 @@ public class AddRecipeActivity extends BaseActivity {
         setupCategorySpinner();
         setupClickListeners();
         setupBottomNavigation(R.id.nav_add);
-        // ׳‘׳“׳™׳§׳” ׳׳ ׳¢׳“׳›׳•׳
         String recipeId = getIntent().getStringExtra("recipeId");
         if (recipeId != null && !recipeId.isEmpty()) {
             loadRecipeForEditing(recipeId);
@@ -82,7 +79,6 @@ public class AddRecipeActivity extends BaseActivity {
             btnSave.setText("Add Recipe");
         }
     }
-
     private void initViews() {
         editTitle = findViewById(R.id.edit_recipe_title);
         editDescription = findViewById(R.id.edit_recipe_description);
@@ -131,7 +127,6 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
     }
-    // ׳“׳™׳׳׳•׳’ ׳׳’׳׳¨׳™׳” ׳׳• ׳׳¦׳׳׳”
     private void showImageSourceDialog() {
         String[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -188,7 +183,7 @@ public class AddRecipeActivity extends BaseActivity {
         }
     }
     private void saveOrUpdateRecipe() {
-        btnSave.setEnabled(false);// ׳ ׳¢׳™׳׳× ׳”׳›׳₪׳×׳•׳¨
+        btnSave.setEnabled(false);
         String title = editTitle.getText().toString().trim();
         String description = editDescription.getText().toString().trim();
         String prepTime = editPrepTime.getText().toString().trim();
@@ -197,16 +192,12 @@ public class AddRecipeActivity extends BaseActivity {
             btnSave.setEnabled(true);
             return;
         }
-
         if (selectedBitmap == null) {
             Toast.makeText(this, "Please select an image", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
             return;
         }
-
-        // ׳™׳¦׳™׳¨׳× ׳”-Blob
         Blob imageDataBlob = ImageHelper.bitmapToBlob(this, selectedBitmap, ImageHelper.NORMAL_IMAGE);
-
         if (imageDataBlob == null) {
             Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
             btnSave.setEnabled(true);
