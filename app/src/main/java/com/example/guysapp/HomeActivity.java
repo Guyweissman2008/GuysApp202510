@@ -157,12 +157,10 @@ public class HomeActivity extends BaseActivity {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filterRecipes(s.toString());
             }
-
             @Override
             public void afterTextChanged(Editable s) {
             }
@@ -228,7 +226,6 @@ public class HomeActivity extends BaseActivity {
             }
         }, durationInMillis);
     }
-
     //ניקודי מאזינים
     private void clearRegistrations() {
         if (recipesReg != null) {
@@ -240,7 +237,6 @@ public class HomeActivity extends BaseActivity {
             savedReg = null;
         }
     }
-
     private ListenerRegistration loadRecipesRealtime() {
         progressOverlay.setVisibility(View.VISIBLE); //גלגל טעינה עד שיעלה
         return FBRef.refRecipes.addSnapshotListener(new EventListener<QuerySnapshot>() {
@@ -326,7 +322,6 @@ public class HomeActivity extends BaseActivity {
                     }
                 });
     }
-
     private void sortFilteredRecipes() {
         Collections.sort(filteredRecipes, new Comparator<Recipe>() {
             @Override

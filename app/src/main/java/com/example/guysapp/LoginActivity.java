@@ -68,8 +68,9 @@ public class LoginActivity extends AppCompatActivity {
     editTextPassword.requestFocus();
     setButtonsEnabled(true);
     String errorMsg = "Login failed";
-    if (task.getException() != null)
-    errorMsg = task.getException().getMessage();
+        if (task.getException() != null) {
+            errorMsg = task.getException().getMessage();
+        }
     Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
      }
      }

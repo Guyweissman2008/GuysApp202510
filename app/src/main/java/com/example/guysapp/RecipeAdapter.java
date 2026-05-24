@@ -3,6 +3,7 @@ package com.example.guysapp;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     private Set<String> savedIds = new HashSet<>();
     private boolean isAdmin = false;
     public RecipeAdapter(List<Recipe> recipeList) {
+
         this.recipeList = recipeList;
     }
 
@@ -77,37 +79,25 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             return;
 
         String recipeId = recipe.getRecipeId();
-
-        // ׳›׳•׳×׳¨׳× ׳•׳×׳™׳׳•׳¨
         holder.title.setText(recipe.getTitle() != null ? recipe.getTitle() : "");
         holder.description.setText(recipe.getDescription() != null ? recipe.getDescription() : "");
-
-        // ׳§׳˜׳’׳•׳¨׳™׳” (Category)
         holder.category.setText("Category: " + (recipe.getCategory() != null ? recipe.getCategory() : ""));
-
-        // ׳׳—׳‘׳¨ (Uploaded by)
         String displayAuthor = recipe.getUsername() != null ? recipe.getUsername() : "Anonymous";
         holder.username.setText("Uploaded by: " + displayAuthor);
-
         bindImage(holder, recipe);
         bindSaveState(holder, recipeId);
         bindSaveClick(holder, recipe, recipeId, displayAuthor);
         bindDeleteClick(holder, recipeId, recipe);
         bindEditClick(holder, recipeId, recipe);
-
-        // ׳–׳׳ ׳”׳›׳ ׳” (mins)
         if (recipe.getPreparationTime() != null && !recipe.getPreparationTime().isEmpty()) {
             holder.textPrepTime.setText(recipe.getPreparationTime() + " mins");
             holder.textPrepTime.setVisibility(View.VISIBLE);
         } else {
             holder.textPrepTime.setVisibility(View.GONE);
         }
-
-        // ׳›׳₪׳×׳•׳¨ ׳©׳™׳×׳•׳£ (Share)
         holder.buttonShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // ׳”׳•׳“׳¢׳× ׳”׳©׳™׳×׳•׳£ ׳‘׳׳ ׳’׳׳™׳×
                 String shareBody = "Hey! check out this great recipe: \n\n" +
                         "Recipe Name: " + recipe.getTitle() + "\n" +
                         "Category: " + recipe.getCategory() + "\n\n" +
@@ -179,13 +169,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 String uid = FBRef.mAuth.getCurrentUser().getUid();
                 String docId = buildSavedDocId(uid, recipeId);
 
-                // ׳ ׳¡׳™׳•׳ ׳׳§׳¨׳•׳ ׳׳ ׳”׳׳¡׳׳ ׳§׳™׳™׳ (׳”׳׳ ׳›׳‘׳¨ ׳©׳׳•׳¨?)
                 FBRef.refSavedRecipes.document(docId).get()
                         .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                             @Override
                             public void onSuccess(DocumentSnapshot documentSnapshot) {
                                 if (documentSnapshot.exists()) {
-                                    // ׳׳ ׳§׳™׳™׳ - ׳׳—׳§ (Unsave)
                                     FBRef.refSavedRecipes.document(docId).delete()
                                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
@@ -204,7 +192,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                 }
                                             });
                                 } else {
-                                    // ׳׳ ׳׳ ׳§׳™׳™׳ - ׳¦׳•׳¨ ׳—׳“׳© (Save)
+
                                     SavedRecipe savedRecipe = new SavedRecipe(
                                             uid,
                                             recipeId,
@@ -219,7 +207,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                                     savedIds.add(recipeId);
                                                     notifyDataSetChanged();
                                                     Toast.makeText(v.getContext(),
-                                                            "Saved successfully", // ׳×׳¨׳’׳•׳
+                                                            "Saved successfully",
                                                             Toast.LENGTH_SHORT).show();
                                                 }
                                             })
@@ -257,16 +245,23 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 && recipeId != null
                 && !recipeId.isEmpty()
                 && (isOwner || isAdmin);
+        if (recipe != null) Log.d("DeleteDebug",
+                "--- Recipe Debug: " + recipe.getTitle() + " ---");
+        else Log.d("DeleteDebug",
+                "--- Recipe Debug: " + "null" + " ---");
 
-        // --- ׳”׳“׳₪׳¡׳•׳× ׳׳׳¦׳™׳׳× ׳”׳‘׳¢׳™׳” ---
-        android.util.Log.d("DeleteDebug", "--- ׳‘׳“׳™׳§׳× ׳׳×׳›׳•׳: " + (recipe != null ? recipe.getTitle() : "null") + " ---");
-        android.util.Log.d("DeleteDebug", "1. showDelete (׳”׳׳ ׳׳•׳×׳¨ ׳׳׳—׳•׳§ ׳‘׳׳¡׳?): " + showDelete);
-        android.util.Log.d("DeleteDebug", "2. currentUserID (׳”׳׳©׳×׳׳© ׳©׳׳—׳•׳‘׳¨): " + currentUserID);
-        android.util.Log.d("DeleteDebug", "3. recipeUserId (׳׳™ ׳™׳¦׳¨ ׳׳× ׳”׳׳×׳›׳•׳?): " + recipeOwnerId);
-        android.util.Log.d("DeleteDebug", "4. isOwner (׳”׳׳ ׳–׳” ׳׳•׳×׳• ׳׳“׳?): " + isOwner);
-        android.util.Log.d("DeleteDebug", "5. isAdmin (׳”׳׳ ׳”׳•׳ ׳׳ ׳”׳?): " + isAdmin);
-        android.util.Log.d("DeleteDebug", "--> ׳”׳×׳•׳¦׳׳” ׳”׳¡׳•׳₪׳™׳× (canDelete): " + canDelete);
-        // ---------------------------
+        android.util.Log.d("DeleteDebug", "1. showDelete (is delete allowed in UI?): " + showDelete);
+
+        android.util.Log.d("DeleteDebug", "2. currentUserID (logged-in user): " + currentUserID);
+
+        android.util.Log.d("DeleteDebug", "3. recipeUserId (recipe owner): " + recipeOwnerId);
+
+        android.util.Log.d("DeleteDebug", "4. isOwner (is this the owner?): " + isOwner);
+
+        android.util.Log.d("DeleteDebug", "5. isAdmin (is this admin?): " + isAdmin);
+
+        android.util.Log.d("DeleteDebug", "--> Final result (canDelete): " + canDelete);
+
 
         if (!canDelete) {
             holder.deleteButton.setVisibility(View.GONE);
@@ -342,7 +337,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot qs) {
-                        // ׳׳—׳™׳§׳× ׳›׳ ׳”׳”׳×׳™׳™׳—׳¡׳•׳™׳•׳× ׳”׳©׳׳•׳¨׳•׳× ׳׳׳×׳›׳•׳ ׳–׳” (Batch Write)
                         if (qs.isEmpty()) return;
 
                         WriteBatch batch = FBRef.FBFS.batch();
@@ -397,28 +391,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
     }
 
-    public void updateRecipeInList(Recipe updatedRecipe) {
-        if (updatedRecipe == null || updatedRecipe.getRecipeId() == null)
-            return;
-        int position = findRecipePosition(updatedRecipe.getRecipeId());
-        if (position != -1) {
-            recipeList.set(position, updatedRecipe);
-            notifyItemChanged(position);
-        }
-    }
 
-    private int findRecipePosition(String recipeId) {
-        if (recipeId == null || recipeList == null)
-            return -1;
 
-        for (int i = 0; i < recipeList.size(); i++) {
-            Recipe r = recipeList.get(i);
-            if (r == null) continue;
 
-            String id = r.getRecipeId();
-            if (id != null && id.equals(recipeId))
-                return i;
-        }
-        return -1;
-    }
 }

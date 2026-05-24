@@ -54,7 +54,8 @@ public class ProfileActivity extends BaseActivity {
     private List<Recipe> myRecipes;
     private List<Recipe> savedRecipes;
     private boolean showingMyRecipes;
-    private final Map<String, ListenerRegistration> savedRecipeDocListeners = new HashMap<>();    private ListenerRegistration myRecipesListener;
+    private final Map<String, ListenerRegistration> savedRecipeDocListeners = new HashMap<>();
+    private ListenerRegistration myRecipesListener;
     private ListenerRegistration savedRecipesListener;
     private ListenerRegistration savedRecipeIdsForHeartsListener;
     @Override
@@ -78,17 +79,17 @@ public class ProfileActivity extends BaseActivity {
         super.onStart();
         Log.d("ProfileActivity", "onStart called");
 
-        loadUserProfile();// ׳˜׳¢׳™׳ ׳× ׳ ׳×׳•׳ ׳™ ׳”׳׳©׳×׳׳© ׳•׳”׳׳×׳›׳•׳ ׳™׳ ׳‘׳›׳ ׳₪׳¢׳ ׳©׳”׳׳¡׳ ׳¢׳•׳׳”
+        loadUserProfile();
     }
     @Override
     protected void onStop() {
         super.onStop();
         Log.d("ProfileActivity", "onStop called");
-        removeListener(myRecipesListener);      // ׳׳×׳›׳•׳ ׳™׳ ׳©׳׳™ (refRecipes ׳׳₪׳™ userId)
-        removeListener(savedRecipesListener);   // ׳¨׳©׳™׳׳× ׳”׳©׳׳•׳¨׳™׳ (refSavedRecipes)
-        removeListener(savedRecipeIdsForHeartsListener); // IDs ׳©׳ ׳©׳׳•׳¨׳™׳ ׳‘׳©׳‘׳™׳ ׳׳‘׳‘׳•׳×
+        removeListener(myRecipesListener);
+        removeListener(savedRecipesListener);
+        removeListener(savedRecipeIdsForHeartsListener);
         for (ListenerRegistration lr : savedRecipeDocListeners.values()) {
-            removeListener(lr);                 // ׳׳׳–׳™׳ ׳׳›׳ ׳׳×׳›׳•׳ ׳©׳׳•׳¨
+            removeListener(lr);
         }
         savedRecipeDocListeners.clear();
     }
@@ -140,7 +141,7 @@ public class ProfileActivity extends BaseActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                             tempSelectedImageUri = result.getData().getData();
-                            tempSelectedBitmap = null; // ׳׳™׳₪׳•׳¡ ׳”׳×׳׳•׳ ׳” ׳׳”׳׳¦׳׳׳” ׳׳ ׳‘׳—׳¨׳ ׳• ׳׳”׳’׳׳¨׳™׳”
+                            tempSelectedBitmap = null;
                             if (dialogProfileImageView != null && tempSelectedImageUri != null) {
                                 dialogProfileImageView.setImageURI(tempSelectedImageUri);
                             }
@@ -157,7 +158,7 @@ public class ProfileActivity extends BaseActivity {
                             Bundle extras = result.getData().getExtras();
                             if (extras != null) {
                                 tempSelectedBitmap = (Bitmap) extras.get("data");
-                                tempSelectedImageUri = null; // ׳׳™׳₪׳•׳¡ ׳”-URI ׳׳ ׳¦׳™׳׳׳ ׳• ׳‘׳׳¦׳׳׳”
+                                tempSelectedImageUri = null;
                                 if (dialogProfileImageView != null && tempSelectedBitmap != null) {
                                     dialogProfileImageView.setImageBitmap(tempSelectedBitmap);
                                 }
@@ -168,19 +169,20 @@ public class ProfileActivity extends BaseActivity {
         );
     }
     private void showImageSourceDialog() {
-
         String[] options = {"Choose from Gallery", "Take Photo", "Cancel"};
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose Image Source");
-        builder.setItems(options, (dialog, which) -> {
-            if (which == 0) {
-                openGallery();
-            } else if (which == 1) {
-                openCamera();
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) {
+                    ProfileActivity.this.openGallery();
+                } else if (which == 1) {
+                    ProfileActivity.this.openCamera();
 
-            } else if (which == 2) {
-                dialog.dismiss();
+                } else if (which == 2) {
+                    dialog.dismiss();
+                }
             }
         });
         builder.show();
@@ -237,11 +239,8 @@ public class ProfileActivity extends BaseActivity {
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
         com.google.firebase.firestore.Blob imageBlob =
                 documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
-
         if (imageBlob == null) return;
-
         Bitmap bitmap = ImageHelper.decodeBlobToBitmap(imageBlob);
-
         if (bitmap != null) {
             profileImage.setImageBitmap(bitmap);
         }
@@ -249,8 +248,18 @@ public class ProfileActivity extends BaseActivity {
     private void setFullName(DocumentSnapshot documentSnapshot) {
         String firstName = documentSnapshot.getString("firstName");
         String lastName = documentSnapshot.getString("lastName");
-        tvFullName.setText(((firstName != null ? firstName : "") + " " +
-                (lastName != null ? lastName : "")).trim());
+        if (lastName != null) {
+            if (firstName != null)
+                tvFullName.setText((firstName + " " + lastName).trim());
+            else
+                tvFullName.setText(("" + " " + lastName).trim());
+        }
+        else {
+            if
+            (firstName != null) tvFullName.setText((firstName + " " + "").trim());
+            else
+                tvFullName.setText(("" + " " + "").trim());
+        }
     }
     private void loadMyRecipesRealtime(String userId) {
         removeListener(myRecipesListener);
@@ -333,7 +342,6 @@ public class ProfileActivity extends BaseActivity {
     private void upsertSavedRecipe(Recipe updated) {
         if (updated == null || updated.getRecipeId() == null)
             return;
-
         for (int i = 0; i < savedRecipes.size(); i++) {
             Recipe recipe = savedRecipes.get(i);
             if (recipe != null && updated.getRecipeId().equals(recipe.getRecipeId())) {
@@ -395,43 +403,23 @@ public class ProfileActivity extends BaseActivity {
         adapter.setShowDelete(true);
         adapter.updateList(savedRecipes);
     }
-
     private void showEditProfileDialog() {
-
         tempSelectedImageUri = null;
         tempSelectedBitmap = null;
-
         Drawable currentDrawable = profileImage.getDrawable();
-
         editProfileDialog = new EditProfileDialog(
                 this,
                 tvFullName.getText().toString(),
                 currentDrawable,
-
                 new EditProfileDialog.OnSaveClickListener() {
                     @Override
-                    public void onSave(String firstName,
-                                       String lastName) {
-
-                        saveProfileChanges(
-                                firstName,
-                                lastName
-                        );
-                    }
-                },
-
+                    public void onSave(String firstName, String lastName) {
+                        saveProfileChanges(firstName, lastName);}},
                 new EditProfileDialog.OnImageClickListener() {
                     @Override
-                    public void onImageClick() {
+                    public void onImageClick() {showImageSourceDialog();}});
 
-                        showImageSourceDialog();
-                    }
-                }
-        );
-
-        dialogProfileImageView =
-                editProfileDialog.getImageView();
-
+        dialogProfileImageView = editProfileDialog.getImageView();
         editProfileDialog.show();
     }
     private void saveProfileChanges(String firstName, String lastName) {

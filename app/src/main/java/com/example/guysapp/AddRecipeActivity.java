@@ -211,7 +211,6 @@ public class AddRecipeActivity extends BaseActivity {
                 String firstName = documentSnapshot.getString("firstName");
                 String lastName = documentSnapshot.getString("lastName");
                 String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-
                 String recipeId = AddRecipeActivity.this.getIntent().getStringExtra("recipeId");
                 if (recipeId == null || recipeId.isEmpty()) {
                     AddRecipeActivity.this.addNewRecipe(title, description, imageDataBlob, selectedCategory, userId, username, prepTime);
@@ -227,11 +226,9 @@ public class AddRecipeActivity extends BaseActivity {
             }
         });
     }
-
     private void addNewRecipe(String title, String description, Blob imageData, String category, String userId, String username, String prepTime) {
         String docId = FBRef.refRecipes.document().getId();
         Recipe recipe = new Recipe(docId, title, description, imageData, category, username, userId, prepTime);
-
         FBRef.refRecipes.document(docId).set(recipe)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -250,8 +247,6 @@ public class AddRecipeActivity extends BaseActivity {
                     }
                 });
     }
-
-
     private void updateRecipe(String recipeId, String title, String description, Blob imageData, String category, String prepTime) {
         FBRef.refRecipes.document(recipeId).update(
                         "title", title,
@@ -275,44 +270,32 @@ public class AddRecipeActivity extends BaseActivity {
                     }
                 });
     }
-
-
     private void loadRecipeForEditing(String recipeId) {
         FBRef.refRecipes.document(recipeId).get()
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot document) {
-
                         if (!document.exists()) return;
-
                         Recipe recipe = document.toObject(Recipe.class);
                         if (recipe == null) return;
-
                         editTitle.setText(recipe.getTitle());
                         editDescription.setText(recipe.getDescription());
                         editPrepTime.setText(recipe.getPreparationTime());
-
                         selectedCategory = recipe.getCategory();
-
-                        ArrayAdapter<CharSequence> adapter =
-                                (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
-
+                        ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) spinnerCategory.getAdapter();
                         if (adapter != null && selectedCategory != null) {
                             spinnerCategory.setSelection(adapter.getPosition(selectedCategory));
                         }
-
                         if (recipe.getImageData() != null) {
                             selectedBitmap = ImageHelper.decodeBlobToBitmap(recipe.getImageData());
                             if (selectedBitmap != null) {
                                 imageRecipe.setImageBitmap(selectedBitmap);
                             }
                         }
-
                         btnSave.setText("Update Recipe");
                     }
                 });
     }
-
     @Override
     protected void onDestroy() {
         if (imageRecipe != null) {
