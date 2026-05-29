@@ -11,7 +11,7 @@ import com.google.android.material.navigation.NavigationBarView;
 public class BaseActivity extends AppCompatActivity {
     protected BottomNavigationView bottomNav;
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
     protected void setupBottomNavigation(int selectedItemId) {
