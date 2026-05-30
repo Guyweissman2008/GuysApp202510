@@ -18,10 +18,10 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
 
         if (!isConnected) {
             // אין אינטרנט
-            Toast.makeText(context, "No Internet Connection ⚠️", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "No Internet Connection ", Toast.LENGTH_LONG).show();
         } else {
 
-            Toast.makeText(context, "You are back online! ✅", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "You are back online! ", Toast.LENGTH_SHORT).show();
         }
     }
 }

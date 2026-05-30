@@ -1,6 +1,7 @@
 package com.example.guysapp;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.Button;
@@ -59,9 +60,12 @@ public class EditProfileDialog {
             imageView.setImageDrawable(currentImage);
         }
 
-        imageView.setOnClickListener(v -> {
-            if (imageClickListener != null) {
-                imageClickListener.onImageClick();
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (imageClickListener != null) {
+                    imageClickListener.onImageClick();
+                }
             }
         });
 
@@ -70,34 +74,44 @@ public class EditProfileDialog {
         builder.setView(view);
         builder.setPositiveButton("Save", null);
         builder.setNegativeButton("Cancel",
-                (d, w) -> d.dismiss());
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface d, int w) {
+                        d.dismiss();
+                    }
+                });
 
         dialog = builder.create();
 
-        dialog.setOnShowListener(d -> {
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface d) {
 
-            Button btnSave =
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                Button btnSave =
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE);
 
-            btnSave.setOnClickListener(v -> {
+                btnSave.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                String first =
-                        etFirstName.getText().toString().trim();
+                        String first =
+                                etFirstName.getText().toString().trim();
 
-                String last =
-                        etLastName.getText().toString().trim();
+                        String last = etLastName.getText().toString().trim();
 
-                if (first.isEmpty() || last.isEmpty()) {
-                    Toast.makeText(context,
-                            "Please enter full name",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
+                        if (first.isEmpty() || last.isEmpty()) {
+                            Toast.makeText(context,
+                                    "Please enter full name",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
 
-                if (saveListener != null) {
-                    saveListener.onSave(first, last);
-                }
-            });
+                        if (saveListener != null) {
+                            saveListener.onSave(first, last);
+                        }
+                    }
+                });
+            }
         });
     }
     private void fillName(String fullName) {

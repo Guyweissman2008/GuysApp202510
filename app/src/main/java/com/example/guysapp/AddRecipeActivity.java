@@ -160,8 +160,6 @@ public class AddRecipeActivity extends BaseActivity {
         if (cameraImageUri != null) {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
-
-            // --- ׳”׳×׳™׳§׳•׳: ׳”׳•׳¡׳₪׳× ׳”׳¨׳©׳׳•׳× ׳’׳™׳©׳” ׳-URI ---
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
             cameraLauncher.launch(cameraImageUri); // ׳”׳©׳•׳¨׳” ׳”׳׳§׳•׳¨׳™׳× ׳©׳׳
@@ -169,7 +167,6 @@ public class AddRecipeActivity extends BaseActivity {
             Toast.makeText(this, "Error creating image file", Toast.LENGTH_SHORT).show();
         }
     }
-    // ׳›׳“׳™ ׳©׳™׳”׳™׳” ׳׳₪׳©׳¨ ׳׳¨׳׳•׳× ׳¢׳ ׳”׳׳¡׳
     private void handleImage(Uri imageUri) {
         if (imageUri == null) return;
 
