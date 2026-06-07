@@ -63,6 +63,16 @@ public class HomeActivity extends BaseActivity {
         setupBottomNavigation(R.id.nav_home);
         checkUserRoleAndUpdateAdapter();
         NotificationHelper.createNotificationChannel(this);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+            }
+        }
     }
 
     @Override
@@ -114,7 +124,19 @@ public class HomeActivity extends BaseActivity {
         adapter.setShowDelete(true); // כדי שתיהיה אופצית מחיקה לאדמין
         recyclerView.setAdapter(adapter);
     }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+        if (requestCode == 1001) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+
+            }
+        }
+    }
     private void checkUserRoleAndUpdateAdapter() {
         if (FBRef.mAuth.getCurrentUser() != null) {
             String uid = FBRef.mAuth.getCurrentUser().getUid();
@@ -185,6 +207,9 @@ public class HomeActivity extends BaseActivity {
         builder.setPositiveButton("Start", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(HomeActivity.this,
+                        "Start clicked",
+                        Toast.LENGTH_SHORT).show();
                 startTimerFromInput(input.getText().toString().trim());
             }
         });
@@ -198,8 +223,15 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void startTimerFromInput(String minutesStr) {
+        Toast.makeText(
+                HomeActivity.this,
+                "Received: " + minutesStr,
+                Toast.LENGTH_LONG
+        ).show();
         if (minutesStr.isEmpty()) {
             Toast.makeText(this, "Please enter time!", Toast.LENGTH_SHORT).show();
+            Log.d("TIMER_DEBUG", "Received: " + minutesStr);
+
             return;
         }
         int minutes;

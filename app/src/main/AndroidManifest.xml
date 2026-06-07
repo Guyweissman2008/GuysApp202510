@@ -26,9 +26,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GuysApp"
         tools:targetApi="31">
-        <activity
-            android:name=".BuyListActivity"
-            android:exported="false" />
+
         <activity
             android:name=".AddRecipeActivity"
             android:exported="false" />
