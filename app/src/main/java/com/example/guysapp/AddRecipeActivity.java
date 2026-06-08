@@ -16,7 +16,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -39,6 +46,7 @@ public class AddRecipeActivity extends BaseActivity {
     private Bitmap selectedBitmap = null;
     private Uri cameraImageUri = null;
     private String selectedCategory = "";
+
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -200,7 +208,52 @@ public class AddRecipeActivity extends BaseActivity {
             btnSave.setEnabled(true);
             return;
         }
+// בדיקת חיבור לאינטרנט
+        // בדיקת חיבור לאינטרנט
+        // בדיקת חיבור לאינטרנט
+        if (!isNetworkAvailable()) {
+            Toast.makeText(this, "המתכון נשמר מקומית ויסונכרן כשהחיבור יחזור", Toast.LENGTH_LONG).show();
 
+            String userId = FBRef.mAuth.getCurrentUser().getUid();
+
+            // בדיקה האם מדובר בעדכון מתכון קיים או במתכון חדש
+            String recipeId = getIntent().getStringExtra("recipeId");
+            final String finalDocId;
+
+            if (recipeId == null || recipeId.isEmpty()) {
+                // מדובר במתכון חדש - מייצרים מזהה חדש
+                finalDocId = FBRef.refRecipes.document().getId();
+                Recipe recipe = new Recipe(finalDocId, title, description, imageDataBlob, selectedCategory, "משתמש מקומי", userId, prepTime);
+                FBRef.refRecipes.document(finalDocId).set(recipe);
+            } else {
+                // מדובר בעדכון מתכון קיים - משתמשים במזהה הקיים ומעדכנים מקומית
+                finalDocId = recipeId;
+                FBRef.refRecipes.document(finalDocId).update(
+                        "title", title,
+                        "description", description,
+                        "category", selectedCategory,
+                        "imageData", imageDataBlob,
+                        "preparationTime", prepTime,
+                        "username", "משתמש מקומי" // שם זמני עד שיסתנכרן
+                );
+            }
+
+            FBRef.refUsers.document(userId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                @Override
+                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    String firstName = documentSnapshot.getString("firstName");
+                    String lastName = documentSnapshot.getString("lastName");
+                    String username = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+
+                    // מעדכן את השם האמיתי במסמך הנכון (חדש או קיים)
+                    FBRef.refRecipes.document(finalDocId).update("username", username);
+                }
+            });
+
+            setResult(RESULT_OK);
+            finish();
+            return;
+        }
         String userId = FBRef.mAuth.getCurrentUser().getUid();
         FBRef.refUsers.document(userId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
@@ -293,6 +346,13 @@ public class AddRecipeActivity extends BaseActivity {
                     }
                 });
     }
+        private boolean isNetworkAvailable() {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        }
     @Override
     protected void onDestroy() {
         if (imageRecipe != null) {
