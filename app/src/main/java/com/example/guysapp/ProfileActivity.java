@@ -396,12 +396,16 @@ public class ProfileActivity extends BaseActivity {
         adapter.setSavedScreen(false);
         adapter.setShowDelete(true);
         adapter.updateList(myRecipes);
+        com.google.android.material.button.MaterialButtonToggleGroup toggleGroup = findViewById(R.id.button_toggle_group);
+        toggleGroup.check(R.id.button_my_recipes);
     }
     private void showSavedRecipes() {
         showingMyRecipes = false;
         adapter.setSavedScreen(true);
         adapter.setShowDelete(true);
         adapter.updateList(savedRecipes);
+        com.google.android.material.button.MaterialButtonToggleGroup toggleGroup = findViewById(R.id.button_toggle_group);
+        toggleGroup.check(R.id.button_saved_recipes);
     }
     private void showEditProfileDialog() {
         tempSelectedImageUri = null;

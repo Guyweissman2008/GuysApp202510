@@ -59,7 +59,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
             android:src="@drawable/ic_edit"
-            android:tint="#C7577C"/>
+            app:tint="#57172A"/>
 
         <!-- EMAIL -->
         <TextView
@@ -80,25 +80,30 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:singleSelection="true"
+            app:selectionRequired="true"
             app:checkedButton="@id/button_my_recipes">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_my_recipes"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="My Recipes"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#C7577C"/>
+                app:strokeColor="#FF5C8D"
+                app:backgroundTint="@color/button_bg_color"
+                android:textColor="@color/button_text_color"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_saved_recipes"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Saved"
-                android:textColor="#FFFFFF"
-                app:backgroundTint="#C7577C"/>
+                app:strokeColor="#FF5C8D"
+                app:backgroundTint="@color/button_bg_color"
+                android:textColor="@color/button_text_color"/>
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
