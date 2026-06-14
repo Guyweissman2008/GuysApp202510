@@ -1,4 +1,5 @@
 package com.example.guysapp;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -14,12 +15,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Intent;
+
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseUser;
@@ -29,13 +32,16 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+
 import androidx.activity.result.ActivityResultLauncher;
+
 public class ProfileActivity extends BaseActivity {
     private Bitmap tempSelectedBitmap;
     private ActivityResultLauncher<Intent> cameraLauncher;
@@ -58,6 +64,7 @@ public class ProfileActivity extends BaseActivity {
     private ListenerRegistration myRecipesListener;
     private ListenerRegistration savedRecipesListener;
     private ListenerRegistration savedRecipeIdsForHeartsListener;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,17 +77,19 @@ public class ProfileActivity extends BaseActivity {
         setupListeners();
         initActivityResultLaunchers();
     }
+
     private void initLists() {
         myRecipes = new ArrayList<>();
         savedRecipes = new ArrayList<>();
     }
+
     @Override
     protected void onStart() {
         super.onStart();
         Log.d("ProfileActivity", "onStart called");
-
         loadUserProfile();
     }
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -93,6 +102,7 @@ public class ProfileActivity extends BaseActivity {
         }
         savedRecipeDocListeners.clear();
     }
+
     private void initViews() {
         profileImage = findViewById(R.id.profile_image);
         tvFullName = findViewById(R.id.text_email);
@@ -102,11 +112,13 @@ public class ProfileActivity extends BaseActivity {
         buttonSavedRecipes = findViewById(R.id.button_saved_recipes);
         progressBar = findViewById(R.id.progressBar);
     }
+
     private void setupRecyclerView() {
         recyclerViewRecipes.setLayoutManager(new LinearLayoutManager(this));
         adapter = new RecipeAdapter(new ArrayList<>());
         recyclerViewRecipes.setAdapter(adapter);
     }
+
     private void setupListeners() {
         buttonMyRecipes.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -133,6 +145,7 @@ public class ProfileActivity extends BaseActivity {
             }
         });
     }
+
     private void initActivityResultLaunchers() {
         imagePickerLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
@@ -168,6 +181,7 @@ public class ProfileActivity extends BaseActivity {
                 }
         );
     }
+
     private void showImageSourceDialog() {
         String[] options = {"Choose from Gallery", "Take Photo", "Cancel"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -187,19 +201,23 @@ public class ProfileActivity extends BaseActivity {
         });
         builder.show();
     }
+
     private void openCamera() {
         Intent takePictureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         cameraLauncher.launch(takePictureIntent);
     }
+
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         imagePickerLauncher.launch(intent);
     }
+
     private void removeListener(ListenerRegistration listener) {
         if (listener != null) {
             listener.remove();
         }
     }
+
     private void loadUserProfile() {
         FirebaseUser currentUser = FBRef.mAuth.getCurrentUser();
         if (currentUser == null) {
@@ -236,6 +254,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void setProfileImageIfExists(DocumentSnapshot documentSnapshot) {
         com.google.firebase.firestore.Blob imageBlob =
                 documentSnapshot.get("imageData", com.google.firebase.firestore.Blob.class);
@@ -245,22 +264,18 @@ public class ProfileActivity extends BaseActivity {
             profileImage.setImageBitmap(bitmap);
         }
     }
+
     private void setFullName(DocumentSnapshot documentSnapshot) {
         String firstName = documentSnapshot.getString("firstName");
         String lastName = documentSnapshot.getString("lastName");
-        if (lastName != null) {
-            if (firstName != null)
-                tvFullName.setText((firstName + " " + lastName).trim());
-            else
-                tvFullName.setText(("" + " " + lastName).trim());
-        }
-        else {
-            if
-            (firstName != null) tvFullName.setText((firstName + " " + "").trim());
-            else
-                tvFullName.setText(("" + " " + "").trim());
-        }
+        if (firstName == null)
+            firstName = "";
+        if (lastName == null)
+            lastName = "";
+        String fullName = (firstName + " " + lastName).trim();
+        tvFullName.setText(fullName);
     }
+
     private void loadMyRecipesRealtime(String userId) {
         removeListener(myRecipesListener);
         myRecipesListener = FBRef.refRecipes
@@ -285,6 +300,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void loadSavedRecipesRealtime(String userId) {
         removeListener(savedRecipesListener);
         savedRecipesListener = FBRef.refSavedRecipes
@@ -339,6 +355,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void upsertSavedRecipe(Recipe updated) {
         if (updated == null || updated.getRecipeId() == null)
             return;
@@ -351,6 +368,7 @@ public class ProfileActivity extends BaseActivity {
         }
         savedRecipes.add(updated);
     }
+
     private void removeRecipeFromSavedList(String recipeId) {
         if (recipeId == null)
             return;
@@ -362,6 +380,7 @@ public class ProfileActivity extends BaseActivity {
             }
         }
     }
+
     private void loadSavedRecipeIdsForHearts(String userId) {
         removeListener(savedRecipeIdsForHeartsListener);
         savedRecipeIdsForHeartsListener = FBRef.refSavedRecipes
@@ -391,6 +410,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void showMyRecipes() {
         showingMyRecipes = true;
         adapter.setSavedScreen(false);
@@ -399,6 +419,7 @@ public class ProfileActivity extends BaseActivity {
         com.google.android.material.button.MaterialButtonToggleGroup toggleGroup = findViewById(R.id.button_toggle_group);
         toggleGroup.check(R.id.button_my_recipes);
     }
+
     private void showSavedRecipes() {
         showingMyRecipes = false;
         adapter.setSavedScreen(true);
@@ -407,6 +428,7 @@ public class ProfileActivity extends BaseActivity {
         com.google.android.material.button.MaterialButtonToggleGroup toggleGroup = findViewById(R.id.button_toggle_group);
         toggleGroup.check(R.id.button_saved_recipes);
     }
+
     private void showEditProfileDialog() {
         tempSelectedImageUri = null;
         tempSelectedBitmap = null;
@@ -418,14 +440,20 @@ public class ProfileActivity extends BaseActivity {
                 new EditProfileDialog.OnSaveClickListener() {
                     @Override
                     public void onSave(String firstName, String lastName) {
-                        saveProfileChanges(firstName, lastName);}},
+                        saveProfileChanges(firstName, lastName);
+                    }
+                },
                 new EditProfileDialog.OnImageClickListener() {
                     @Override
-                    public void onImageClick() {showImageSourceDialog();}});
+                    public void onImageClick() {
+                        showImageSourceDialog();
+                    }
+                });
 
         dialogProfileImageView = editProfileDialog.getImageView();
         editProfileDialog.show();
     }
+
     private void saveProfileChanges(String firstName, String lastName) {
         setSavingState(true, editProfileDialog.getSaveButton()
         );
@@ -484,7 +512,8 @@ public class ProfileActivity extends BaseActivity {
                         setSavingState(
                                 false,
                                 editProfileDialog.getSaveButton()
-                        );                       editProfileDialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
+                        );
+                        editProfileDialog.dismiss(); // ׳¡׳•׳’׳¨׳™׳ ׳¨׳§ ׳׳—׳¨׳™ ׳”׳¦׳׳—׳”
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -500,6 +529,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void updateRecipeAuthorNameInDatabase(String userId, String newFullName) {
         setLoading(true);
         FBRef.refRecipes.whereEqualTo("userId", userId).get()
@@ -526,7 +556,8 @@ public class ProfileActivity extends BaseActivity {
                                         setLoading(false);
                                         Toast.makeText(ProfileActivity.this,
                                                 "Error updating my recipes: " + e.getMessage(),
-                                                Toast.LENGTH_LONG).show();                                    }
+                                                Toast.LENGTH_LONG).show();
+                                    }
                                 });
                     }
                 })
@@ -540,6 +571,7 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void updateSavedRecipeAuthorNameInDatabase(String userId, String newFullName) {
         FBRef.refSavedRecipes.whereEqualTo("recipeOwnerId", userId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -582,15 +614,18 @@ public class ProfileActivity extends BaseActivity {
                     }
                 });
     }
+
     private void setLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
+
     private void setSavingState(boolean isSaving, Button btnSave) {
         setLoading(isSaving);
         if (btnSave != null) {
             btnSave.setEnabled(!isSaving);
         }
     }
+
     private void resetDialogImageToCurrentProfile() {
         tempSelectedImageUri = null;
         tempSelectedBitmap = null;
