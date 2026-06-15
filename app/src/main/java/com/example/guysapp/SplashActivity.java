@@ -16,16 +16,7 @@ public class SplashActivity extends AppCompatActivity {
 
                 FirebaseUser user = FBRef.mAuth.getCurrentUser();
                 if (user != null) {
-                    // ניסיון לקחת את השם המלא
-                    String name = user.getDisplayName();
-                    // בדיקה: אם השם ריק או לא קיים, נשתמש במייל כגיבוי
-                    if (name == null || name.isEmpty()) {
-                        name = user.getEmail();
-                    }
-                    Toast.makeText(SplashActivity.this,
-                            "Welcome back, " + name,
-                            Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(SplashActivity.this, "Welcome back", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(SplashActivity.this, HomeActivity.class));
                 } else {
                     startActivity(new Intent(SplashActivity.this, LoginActivity.class));
